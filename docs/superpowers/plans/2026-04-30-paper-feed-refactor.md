@@ -162,7 +162,7 @@ describe("loadAppConfig", () => {
       APP_CONFIG: JSON.stringify({
         interests: { profile: { enabled: true, summary: "mobility", topics: [], methods: [], favoriteJournals: [], avoidTopics: [], referencePapers: [] } },
         feeds: { catalogSelections: ["Nature"], customRss: [] },
-        matching: { provider: "api", api: { baseUrl: "https://example.test/v1", model: "text-embedding-3-small", apiKeyEnv: "EMBEDDING_API_KEY", batchSize: 8 }, local: { model: "jinaai/jina-embeddings-v5-text-nano", batchSize: 8 }, paperLimit: 5, maxPaperAgeDays: 7 },
+        matching: { provider: "api", api: { baseUrl: "https://example.test/v1", model: "text-embedding-3-small", apiKeyEnv: "EMBEDDING_API_KEY", batchSize: 8 }, local: { model: "Xenova/all-MiniLM-L6-v2", batchSize: 8 }, paperLimit: 5, maxPaperAgeDays: 7 },
         summary: { enabled: false, baseUrl: "https://api.openai.com/v1", model: "gpt-4o-mini", apiKeyEnv: "OPENAI_API_KEY", language: "English", maxTokens: 512 },
         delivery: { mode: "smtp", fromEnv: "SENDER", toEnv: "RECEIVER", smtpHostEnv: "SMTP_SERVER", smtpPortEnv: "SMTP_PORT", smtpPasswordEnv: "SENDER_PASSWORD" },
         runtime: { debug: true, sendEmpty: true }

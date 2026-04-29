@@ -73,7 +73,7 @@ The new config should use a professional but friendly shape:
       "batchSize": 32
     },
     "local": {
-      "model": "jinaai/jina-embeddings-v5-text-nano",
+      "model": "Xenova/all-MiniLM-L6-v2",
       "batchSize": 16
     },
     "paperLimit": 10,

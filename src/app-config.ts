@@ -234,7 +234,7 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
         batchSize: asNumber(matchingApi.batchSize, 32)
       },
       local: {
-        model: asString(matchingLocal.model, "jinaai/jina-embeddings-v5-text-nano"),
+        model: asString(matchingLocal.model, "Xenova/all-MiniLM-L6-v2"),
         batchSize: asNumber(matchingLocal.batchSize, 16)
       },
       paperLimit: asNumber(matching.paperLimit, 10),
