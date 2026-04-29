@@ -83,7 +83,8 @@ executor:
         ZOTERO_KEY: "zotero-key",
         SENDER: "sender@example.test",
         SENDER_PASSWORD: "sender-password",
-        RECEIVER: "receiver@example.test"
+        RECEIVER: "receiver@example.test",
+        SMTP_SERVER: "smtp.example.test"
       });
 
       expect(config.debug).toBe(false);
