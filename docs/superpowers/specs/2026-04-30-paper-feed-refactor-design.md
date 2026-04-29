@@ -24,7 +24,7 @@ If both are enabled, the run merges them into one normalized interest corpus. Ne
 
 ## Configuration Model
 
-The current YAML and legacy naming model should be replaced by a clean-break JSON config model. The primary distribution path is a canonical JSON blob in a GitHub repository variable. Secrets remain separate and are injected through GitHub Secrets or local environment variables.
+The current YAML and legacy naming model should be replaced by a clean-break JSON config model. The primary distribution path is a canonical JSON blob in a GitHub repository secret, because Actions logs can expose non-secret environment values. Credentials remain separate secrets and are referenced by env-name fields.
 
 The new config should use a professional but friendly shape:
 

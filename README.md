@@ -11,9 +11,9 @@ You can enable either path or both. When both are enabled, the app merges them i
 
 ## GitHub Setup
 
-### 1. Repository Variable
+### 1. Repository Secret
 
-Create one repository variable:
+Create this repository secret:
 
 | Key | Description |
 | --- | --- |
@@ -128,7 +128,7 @@ Create these secrets as needed:
 | `OPENAI_API_KEY` | generating TLDR summaries |
 | `ZOTERO_KEY` | using Zotero interests |
 
-`APP_CONFIG` is normally not a secret. Keep credentials in secrets and reference them through `apiKeyEnv` or delivery env fields.
+Keep credentials in separate secrets and reference them through `apiKeyEnv` or delivery env fields. `APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
 
 ## Matching
 

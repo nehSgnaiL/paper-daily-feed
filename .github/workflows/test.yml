@@ -32,7 +32,7 @@ jobs:
 
       - name: Run recommendation feed in test mode
         env:
-          APP_CONFIG: ${{ vars.APP_CONFIG }}
+          APP_CONFIG: ${{ secrets.APP_CONFIG }}
           ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
           EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
