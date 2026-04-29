@@ -1,7 +1,7 @@
 import { config as loadDotenv } from "dotenv";
 import { pathToFileURL } from "node:url";
 
-loadDotenv({ path: [".env.local", ".env"] });
+loadDotenv({ path: [".env.local", ".env"], quiet: true });
 
 import journals from "../data/journals.config.js";
 import { loadAppConfig } from "./app-config.js";
