@@ -1,4 +1,4 @@
-import { existsSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadAppConfig } from "../src/app-config.js";
 
@@ -7,6 +7,11 @@ const originalAppConfigText = existsSync(appConfigPath) ? readFileSync(appConfig
 
 function json(value: unknown): string {
   return JSON.stringify(value);
+}
+
+function writeAppConfigFile(value: unknown): void {
+  mkdirSync("config", { recursive: true });
+  writeFileSync(appConfigPath, json(value));
 }
 
 afterEach(() => {
@@ -64,7 +69,7 @@ describe("loadAppConfig", () => {
   });
 
   it("prefers explicit JSON text over APP_CONFIG and file fallback", () => {
-    writeFileSync(appConfigPath, json({ matching: { paperLimit: 99 } }));
+    writeAppConfigFile({ matching: { paperLimit: 99 } });
 
     const config = loadAppConfig(
       {
@@ -77,15 +82,12 @@ describe("loadAppConfig", () => {
   });
 
   it("loads config/app.json when no explicit text or APP_CONFIG exists", () => {
-    writeFileSync(
-      appConfigPath,
-      json({
-        feeds: {
-          catalogSelections: ["Nature"],
-          customRss: [{ name: "Example Feed", rss: "https://example.test/rss.xml" }]
-        }
-      })
-    );
+    writeAppConfigFile({
+      feeds: {
+        catalogSelections: ["Nature"],
+        customRss: [{ name: "Example Feed", rss: "https://example.test/rss.xml" }]
+      }
+    });
 
     const config = loadAppConfig({});
 

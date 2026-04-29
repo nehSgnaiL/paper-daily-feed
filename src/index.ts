@@ -11,7 +11,7 @@ import { resolveFeedSources } from "./feed-sources.js";
 import { buildInterestCorpus } from "./interest-corpus.js";
 import { rankPapers } from "./matching.js";
 import { fetchJournalFeeds, filterRecentPapers } from "./rss.js";
-import { createOpenAISummarizer, summarizeRankedPapers } from "./summary.js";
+import { createOpenAISummarizer, summarizeRecommendedPapers } from "./summary.js";
 
 type Env = Record<string, string | undefined>;
 
@@ -68,7 +68,7 @@ async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config
 
   const summaryApiKey = env[config.summary.apiKeyEnv]?.trim();
   if (config.summary.enabled && summaryApiKey && ranked.length > 0) {
-    ranked = await summarizeRankedPapers(ranked, createOpenAISummarizer(config.summary, env));
+    ranked = await summarizeRecommendedPapers(ranked, createOpenAISummarizer(config.summary, env));
   }
 
   const html = renderEmail(ranked);

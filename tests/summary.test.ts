@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { createOpenAISummarizer, summarizeRankedPapers } from "../src/summary.js";
+import { createOpenAISummarizer, summarizeRecommendedPapers } from "../src/summary.js";
 import type { SummaryConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
 
@@ -96,7 +96,7 @@ describe("createOpenAISummarizer", () => {
       }
     ];
 
-    const summarized = await summarizeRankedPapers(papers, async () => "A concise TLDR.");
+    const summarized = await summarizeRecommendedPapers(papers, async () => "A concise TLDR.");
 
     expect(summarized[0].tldr).toBe("A concise TLDR.");
   });

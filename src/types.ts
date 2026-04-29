@@ -37,12 +37,6 @@ export type CorpusPaper = {
   paths: string[];
 };
 
-export type RankedPaper = FeedPaper & {
-  score: number;
-  matchedZoteroTitle: string | null;
-  tldr?: string;
-};
-
 export type RecommendedPaper = FeedPaper & {
   score: number;
   matchContext: MatchContext | null;

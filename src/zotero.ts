@@ -1,5 +1,4 @@
 import type { ZoteroInterestConfig } from "./app-config.js";
-import type { AppConfig as LegacyAppConfig } from "./config.js";
 import type { CorpusPaper, InterestDocument } from "./types.js";
 
 export type ZoteroItem = {
@@ -155,42 +154,6 @@ function buildCollectionPathMap(collections: ZoteroCollection[]): Map<string, st
   }
 
   return cache;
-}
-
-export async function fetchZoteroCorpus(config: LegacyAppConfig): Promise<CorpusPaper[]> {
-  const corpus: CorpusPaper[] = [];
-  const [items, collections] = await Promise.all([
-    fetchAllZoteroPages<ZoteroItem>(
-      {
-        userId: config.zotero.userId,
-        apiKey: config.zotero.apiKey,
-        libraryType: config.zotero.libraryType
-      },
-      "items/top"
-    ),
-    fetchAllZoteroPages<ZoteroCollection>(
-      {
-        userId: config.zotero.userId,
-        apiKey: config.zotero.apiKey,
-        libraryType: config.zotero.libraryType
-      },
-      "collections"
-    )
-  ]);
-  const collectionPaths = buildCollectionPathMap(collections);
-
-  corpus.push(
-    ...items
-      .map((item) =>
-        normalizeZoteroItem({
-          ...item,
-          paths: (item.data?.collections ?? []).map((key) => collectionPaths.get(key) ?? key)
-        })
-      )
-      .filter((paper): paper is CorpusPaper => paper !== null)
-  );
-
-  return filterCorpusByPath(corpus, config.zotero.includePath, config.zotero.excludePath);
 }
 
 export async function fetchZoteroInterestDocuments(

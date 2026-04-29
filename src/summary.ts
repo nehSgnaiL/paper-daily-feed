@@ -48,7 +48,7 @@ export function createOpenAISummarizer(
   };
 }
 
-export async function summarizeRankedPapers(
+export async function summarizeRecommendedPapers(
   papers: RecommendedPaper[],
   summarizePaper: SummarizePaper
 ): Promise<RecommendedPaper[]> {
