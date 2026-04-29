@@ -2,7 +2,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 import nodemailer from "nodemailer";
 import { renderEmail, sendEmail } from "../src/email.js";
 import type { AppConfig } from "../src/config.js";
-import type { RankedPaper } from "../src/types.js";
+import type { RecommendedPaper } from "../src/types.js";
 
 vi.mock("nodemailer", () => ({
   default: {
@@ -11,16 +11,21 @@ vi.mock("nodemailer", () => ({
 }));
 
 describe("renderEmail", () => {
-  it("renders recommended papers with journal, score, matched Zotero item, and link", () => {
-    const papers: RankedPaper[] = [
+  it("renders recommended papers with journal, score, link, match line, and abstract excerpt fallback", () => {
+    const papers: RecommendedPaper[] = [
       {
         journal: "Nature Cities",
         title: "Transit accessibility improves climate resilience",
-        abstract: "Public transit accessibility and climate resilience in neighborhoods.",
+        abstract:
+          "Public transit accessibility and climate resilience in neighborhoods. This abstract continues with enough detail to prove the renderer uses a compact excerpt rather than dumping the full source text into the bulletin.",
         url: "https://example.test/transit",
         publishedAt: new Date("2026-04-28T10:30:00.000Z"),
         score: 0.456,
-        matchedZoteroTitle: "Urban mobility and climate adaptation"
+        matchContext: {
+          bestMatchSource: "zotero",
+          bestMatchTitle: "Urban mobility and climate adaptation",
+          bestMatchTopics: ["transit", "climate resilience"]
+        }
       }
     ];
 
@@ -29,12 +34,37 @@ describe("renderEmail", () => {
     expect(html).toContain("Transit accessibility improves climate resilience");
     expect(html).toContain("Nature Cities");
     expect(html).toContain("45.6%");
+    expect(html).toContain("Matched your interests");
     expect(html).toContain("Urban mobility and climate adaptation");
+    expect(html).toContain("Abstract excerpt");
+    expect(html).toContain("Public transit accessibility and climate resilience in neighborhoods.");
     expect(html).toContain("https://example.test/transit");
   });
 
   it("renders a no-paper message for an empty digest", () => {
     expect(renderEmail([])).toContain("No recommended papers today");
+  });
+
+  it("renders matched topics when there is no best match title", () => {
+    const html = renderEmail([
+      {
+        journal: "Science",
+        title: "Heat risk and urban shade",
+        abstract: "",
+        url: "https://example.test/heat",
+        publishedAt: null,
+        score: 0.8,
+        matchContext: {
+          bestMatchSource: "profile",
+          bestMatchTitle: null,
+          bestMatchTopics: ["urban heat", "shade equity"]
+        }
+      }
+    ]);
+
+    expect(html).toContain("Matched your interests");
+    expect(html).toContain("urban heat, shade equity");
+    expect(html).toContain("No abstract provided.");
   });
 });
 

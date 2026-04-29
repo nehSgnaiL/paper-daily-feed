@@ -1,6 +1,12 @@
 import nodemailer from "nodemailer";
 import type { AppConfig } from "./config.js";
-import type { RankedPaper } from "./types.js";
+import type { RecommendedPaper } from "./types.js";
+
+const ABSTRACT_EXCERPT_LIMIT = 280;
+
+type RenderablePaper = Omit<RecommendedPaper, "matchContext"> & {
+  matchContext?: RecommendedPaper["matchContext"];
+};
 
 function escapeHtml(value: string): string {
   return value
@@ -18,41 +24,95 @@ function formatDate(value: Date | null): string {
   return value.toISOString().slice(0, 10);
 }
 
-function renderPaper(paper: RankedPaper): string {
-  const score = `${(paper.score * 100).toFixed(1)}%`;
-  const matched = paper.matchedZoteroTitle
-    ? `<p style="margin: 6px 0; color: #555;"><strong>Closest Zotero match:</strong> ${escapeHtml(
-        paper.matchedZoteroTitle
-      )}</p>`
-    : "";
+function truncateText(value: string, maxLength: number): string {
+  const normalized = value.replace(/\s+/g, " ").trim();
+  if (normalized.length <= maxLength) {
+    return normalized;
+  }
 
-  return `
-    <article style="border: 1px solid #ddd; border-radius: 8px; padding: 16px; margin: 0 0 16px; font-family: Arial, sans-serif;">
-      <p style="margin: 0 0 6px; color: #666; font-size: 13px;">${escapeHtml(paper.journal)} · ${formatDate(
-        paper.publishedAt
-      )}</p>
-      <h2 style="font-size: 18px; margin: 0 0 8px;"><a href="${escapeHtml(
-        paper.url
-      )}" style="color: #174ea6; text-decoration: none;">${escapeHtml(paper.title)}</a></h2>
-      <p style="margin: 6px 0; color: #333;"><strong>Recommendation score:</strong> ${score}</p>
-      ${matched}
-      <p style="margin: 10px 0 0; line-height: 1.45; color: #333;"><strong>TLDR:</strong> ${escapeHtml(
-        paper.tldr || paper.abstract || "No abstract provided."
-      )}</p>
-    </article>`;
+  return `${normalized.slice(0, maxLength).trimEnd()}...`;
 }
 
-export function renderEmail(papers: RankedPaper[]): string {
+function renderMatchLine(paper: RenderablePaper): string {
+  if (!paper.matchContext) {
+    return "";
+  }
+
+  if (paper.matchContext.bestMatchTitle) {
+    return `<p style="margin: 12px 0 0; color: #6f4f1f; font-size: 13px; line-height: 1.45;"><strong style="color: #4f3514;">Matched your interests:</strong> ${escapeHtml(
+      paper.matchContext.bestMatchTitle
+    )}</p>`;
+  }
+
+  if (paper.matchContext.bestMatchTopics.length > 0) {
+    return `<p style="margin: 12px 0 0; color: #6f4f1f; font-size: 13px; line-height: 1.45;"><strong style="color: #4f3514;">Matched your interests:</strong> ${escapeHtml(
+      paper.matchContext.bestMatchTopics.join(", ")
+    )}</p>`;
+  }
+
+  return "";
+}
+
+function renderSummary(paper: RenderablePaper): string {
+  if (paper.tldr?.trim()) {
+    return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">TLDR:</strong> ${escapeHtml(
+      paper.tldr.trim()
+    )}</p>`;
+  }
+
+  if (paper.abstract.trim()) {
+    return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">Abstract excerpt:</strong> ${escapeHtml(
+      truncateText(paper.abstract, ABSTRACT_EXCERPT_LIMIT)
+    )}</p>`;
+  }
+
+  return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">Abstract excerpt:</strong> No abstract provided.</p>`;
+}
+
+function renderPaper(paper: RenderablePaper): string {
+  const score = `${(paper.score * 100).toFixed(1)}%`;
+  const matchLine = renderMatchLine(paper);
+  const summary = renderSummary(paper);
+
+  return `
+          <article style="background: #ffffff; border: 1px solid #e6dfd3; border-radius: 18px; padding: 24px; margin: 0 0 18px; box-shadow: 0 1px 0 rgba(20, 16, 10, 0.04);">
+            <p style="margin: 0 0 8px; color: #7c6f64; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${escapeHtml(
+              paper.journal
+            )} · ${formatDate(
+        paper.publishedAt
+      )}</p>
+            <h2 style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 1.24; margin: 0 0 14px; color: #1f2933;">
+              <a href="${escapeHtml(paper.url)}" style="color: #1f2933; text-decoration: none;">${escapeHtml(
+                paper.title
+              )}</a>
+            </h2>
+            <p style="display: inline-block; margin: 0; padding: 7px 11px; border-radius: 999px; background: #f5ead8; color: #5c3d12; font-size: 13px; font-weight: 700;">Recommendation score: ${score}</p>
+            ${matchLine}
+            ${summary}
+          </article>`;
+}
+
+export function renderEmail(papers: RecommendedPaper[]): string;
+export function renderEmail(papers: RenderablePaper[]): string;
+export function renderEmail(papers: RenderablePaper[]): string {
   const content =
     papers.length === 0
-      ? `<p style="font-family: Arial, sans-serif;">No recommended papers today.</p>`
+      ? `<div style="background: #ffffff; border: 1px solid #e6dfd3; border-radius: 18px; padding: 24px; color: #4b5563; font-size: 15px; line-height: 1.6;">No recommended papers today.</div>`
       : papers.map(renderPaper).join("\n");
 
   return `<!doctype html>
 <html>
-  <body>
-    <h1 style="font-family: Arial, sans-serif; font-size: 22px;">Daily paper feeds</h1>
-    ${content}
+  <body style="margin: 0; padding: 0; background: #f6f1e8;">
+    <div style="background: #f6f1e8; margin: 0; padding: 32px 16px; font-family: Arial, Helvetica, sans-serif; color: #1f2933;">
+      <main style="max-width: 680px; margin: 0 auto;">
+        <header style="padding: 8px 2px 24px; border-bottom: 1px solid #ded4c5; margin: 0 0 22px;">
+          <p style="margin: 0 0 8px; color: #9a6a21; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Research Bulletin</p>
+          <h1 style="font-family: Georgia, 'Times New Roman', serif; font-size: 34px; line-height: 1.12; margin: 0; color: #18212f;">Daily paper feeds</h1>
+          <p style="margin: 12px 0 0; color: #6b7280; font-size: 15px; line-height: 1.55;">A concise digest of papers aligned with your research interests.</p>
+        </header>
+        ${content}
+      </main>
+    </div>
   </body>
 </html>`;
 }
