@@ -1,6 +1,8 @@
 import { describe, expect, it } from "vitest";
-import type { ProfileInterestConfig } from "../src/app-config.js";
+import type { AppConfig, ProfileInterestConfig, ZoteroInterestConfig } from "../src/app-config.js";
+import { buildInterestCorpus } from "../src/interest-corpus.js";
 import { buildProfileInterestDocuments } from "../src/interest-profile.js";
+import type { InterestDocument } from "../src/types.js";
 
 function profileConfig(overrides: Partial<ProfileInterestConfig> = {}): ProfileInterestConfig {
   return {
@@ -12,6 +14,28 @@ function profileConfig(overrides: Partial<ProfileInterestConfig> = {}): ProfileI
     avoidTopics: [],
     referencePapers: [],
     ...overrides
+  };
+}
+
+function zoteroConfig(overrides: Partial<ZoteroInterestConfig> = {}): ZoteroInterestConfig {
+  return {
+    enabled: false,
+    userId: "",
+    apiKeyEnv: "ZOTERO_KEY",
+    libraryType: "user",
+    includeCollections: [],
+    excludeCollections: [],
+    ...overrides
+  };
+}
+
+function interestsConfig(overrides: {
+  profile?: Partial<ProfileInterestConfig>;
+  zotero?: Partial<ZoteroInterestConfig>;
+} = {}): AppConfig["interests"] {
+  return {
+    profile: profileConfig(overrides.profile),
+    zotero: zoteroConfig(overrides.zotero)
   };
 }
 
@@ -98,5 +122,64 @@ describe("buildProfileInterestDocuments", () => {
         topics: ["geospatial AI"]
       }
     ]);
+  });
+});
+
+describe("buildInterestCorpus", () => {
+  it("merges profile, reference paper, and Zotero interest documents", async () => {
+    const zoteroDocuments: InterestDocument[] = [
+      {
+        source: "zotero",
+        title: "Zotero reference",
+        text: "Title: Zotero reference\nAbstract: Imported abstract.",
+        topics: []
+      }
+    ];
+
+    const documents = await buildInterestCorpus(
+      interestsConfig({
+        profile: {
+          summary: "Urban climate adaptation.",
+          topics: ["urban analytics"],
+          referencePapers: [{ title: "Reference Paper", abstract: "Reference abstract." }]
+        },
+        zotero: {
+          enabled: true,
+          userId: "123",
+          apiKeyEnv: "ZOTERO_KEY"
+        }
+      }),
+      { ZOTERO_KEY: "secret" },
+      async () => zoteroDocuments
+    );
+
+    expect(documents.map((document) => document.source)).toEqual(["profile", "reference-paper", "zotero"]);
+    expect(documents[2]).toBe(zoteroDocuments[0]);
+  });
+
+  it("does not fetch Zotero interest documents when Zotero is disabled", async () => {
+    let fetchCalls = 0;
+
+    const documents = await buildInterestCorpus(
+      interestsConfig({
+        profile: {
+          summary: "Profile only.",
+          topics: ["profile"]
+        },
+        zotero: {
+          enabled: false,
+          userId: "123",
+          apiKeyEnv: "ZOTERO_KEY"
+        }
+      }),
+      { ZOTERO_KEY: "secret" },
+      async () => {
+        fetchCalls += 1;
+        return [];
+      }
+    );
+
+    expect(fetchCalls).toBe(0);
+    expect(documents.map((document) => document.source)).toEqual(["profile"]);
   });
 });

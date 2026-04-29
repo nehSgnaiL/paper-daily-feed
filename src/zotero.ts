@@ -1,7 +1,8 @@
-import type { AppConfig } from "./config.js";
-import type { CorpusPaper } from "./types.js";
+import type { ZoteroInterestConfig } from "./app-config.js";
+import type { AppConfig as LegacyAppConfig } from "./config.js";
+import type { CorpusPaper, InterestDocument } from "./types.js";
 
-type ZoteroItem = {
+export type ZoteroItem = {
   data?: {
     itemType?: string;
     title?: string;
@@ -19,6 +20,12 @@ type ZoteroCollection = {
   };
 };
 
+type ZoteroLibraryConfig = {
+  userId: string;
+  apiKey: string;
+  libraryType: "user" | "group";
+};
+
 const SUPPORTED_ITEM_TYPES = new Set(["journalArticle", "conferencePaper", "preprint"]);
 
 export function normalizeZoteroItem(item: ZoteroItem): CorpusPaper | null {
@@ -31,6 +38,20 @@ export function normalizeZoteroItem(item: ZoteroItem): CorpusPaper | null {
   }
 
   return { title, abstract, paths: item.paths ?? [] };
+}
+
+export function normalizeZoteroInterestDocument(item: ZoteroItem): InterestDocument | null {
+  const paper = normalizeZoteroItem(item);
+  if (!paper) {
+    return null;
+  }
+
+  return {
+    source: "zotero",
+    title: paper.title,
+    text: [`Title: ${paper.title}`, `Abstract: ${paper.abstract}`].join("\n"),
+    topics: []
+  };
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -73,12 +94,12 @@ export function filterCorpusByPath(
   });
 }
 
-function zoteroLibraryPath(config: AppConfig): string {
-  const libraryPath = config.zotero.libraryType === "group" ? "groups" : "users";
-  return `https://api.zotero.org/${libraryPath}/${config.zotero.userId}`;
+function zoteroLibraryPath(config: ZoteroLibraryConfig): string {
+  const libraryPath = config.libraryType === "group" ? "groups" : "users";
+  return `https://api.zotero.org/${libraryPath}/${config.userId}`;
 }
 
-async function fetchZoteroPage(config: AppConfig, resource: string, start: number): Promise<unknown[]> {
+async function fetchZoteroPage(config: ZoteroLibraryConfig, resource: string, start: number): Promise<unknown[]> {
   const url = new URL(`${zoteroLibraryPath(config)}/${resource}`);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "100");
@@ -86,7 +107,7 @@ async function fetchZoteroPage(config: AppConfig, resource: string, start: numbe
 
   const response = await fetch(url, {
     headers: {
-      "Zotero-API-Key": config.zotero.apiKey
+      "Zotero-API-Key": config.apiKey
     }
   });
 
@@ -97,7 +118,7 @@ async function fetchZoteroPage(config: AppConfig, resource: string, start: numbe
   return (await response.json()) as unknown[];
 }
 
-async function fetchAllZoteroPages<T>(config: AppConfig, resource: string): Promise<T[]> {
+async function fetchAllZoteroPages<T>(config: ZoteroLibraryConfig, resource: string): Promise<T[]> {
   const allItems: T[] = [];
   const pageSize = 100;
 
@@ -136,11 +157,25 @@ function buildCollectionPathMap(collections: ZoteroCollection[]): Map<string, st
   return cache;
 }
 
-export async function fetchZoteroCorpus(config: AppConfig): Promise<CorpusPaper[]> {
+export async function fetchZoteroCorpus(config: LegacyAppConfig): Promise<CorpusPaper[]> {
   const corpus: CorpusPaper[] = [];
   const [items, collections] = await Promise.all([
-    fetchAllZoteroPages<ZoteroItem>(config, "items/top"),
-    fetchAllZoteroPages<ZoteroCollection>(config, "collections")
+    fetchAllZoteroPages<ZoteroItem>(
+      {
+        userId: config.zotero.userId,
+        apiKey: config.zotero.apiKey,
+        libraryType: config.zotero.libraryType
+      },
+      "items/top"
+    ),
+    fetchAllZoteroPages<ZoteroCollection>(
+      {
+        userId: config.zotero.userId,
+        apiKey: config.zotero.apiKey,
+        libraryType: config.zotero.libraryType
+      },
+      "collections"
+    )
   ]);
   const collectionPaths = buildCollectionPathMap(collections);
 
@@ -156,4 +191,41 @@ export async function fetchZoteroCorpus(config: AppConfig): Promise<CorpusPaper[
   );
 
   return filterCorpusByPath(corpus, config.zotero.includePath, config.zotero.excludePath);
+}
+
+export async function fetchZoteroInterestDocuments(
+  config: ZoteroInterestConfig,
+  env: Record<string, string | undefined>
+): Promise<InterestDocument[]> {
+  const userId = config.userId.trim();
+  const apiKey = env[config.apiKeyEnv]?.trim() ?? "";
+  if (!config.enabled || !userId || !apiKey) {
+    return [];
+  }
+
+  const libraryConfig: ZoteroLibraryConfig = {
+    userId,
+    apiKey,
+    libraryType: config.libraryType
+  };
+  const [items, collections] = await Promise.all([
+    fetchAllZoteroPages<ZoteroItem>(libraryConfig, "items/top"),
+    fetchAllZoteroPages<ZoteroCollection>(libraryConfig, "collections")
+  ]);
+  const collectionPaths = buildCollectionPathMap(collections);
+  const corpus = items
+    .map((item) =>
+      normalizeZoteroItem({
+        ...item,
+        paths: (item.data?.collections ?? []).map((key) => collectionPaths.get(key) ?? key)
+      })
+    )
+    .filter((paper): paper is CorpusPaper => paper !== null);
+
+  return filterCorpusByPath(corpus, config.includeCollections, config.excludeCollections).map((paper) => ({
+    source: "zotero",
+    title: paper.title,
+    text: [`Title: ${paper.title}`, `Abstract: ${paper.abstract}`].join("\n"),
+    topics: []
+  }));
 }
