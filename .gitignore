@@ -6,5 +6,6 @@ dist/
 .DS_Store
 *.log
 .agents/
+.worktrees/
 skills-lock.json
 config/custom.yaml
