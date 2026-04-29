@@ -58,7 +58,7 @@ describe("sendEmail", () => {
     maxPapers: 3,
     debug: false,
     subscriptions: ["Nature"],
-    embedding: null,
+    embedding: { provider: "api", baseUrl: "https://example.test", model: "model", batchSize: null },
     generation: null,
     sendEmpty: true
   };

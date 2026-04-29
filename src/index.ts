@@ -42,14 +42,7 @@ async function main(): Promise<void> {
   const recentPapers = filterRecentPapers(allFeedPapers, config.maxPaperAgeDays);
   console.log(`Fetched ${allFeedPapers.length} RSS papers; ${recentPapers.length} are recent.`);
 
-  let ranked = config.embedding
-    ? await rankCandidatesWithEmbeddings(
-        recentPapers,
-        corpus,
-        config.maxPapers,
-        await createOpenAIEmbedder(config.embedding)
-      )
-    : rankCandidates(recentPapers, corpus, config.maxPapers);
+  let ranked = await rankCandidates(config.embedding, recentPapers, corpus, config.maxPapers);
   if (ranked.length === 0 && !config.sendEmpty) {
     console.log("No recommended papers above threshold. Skipping email.");
     return;
