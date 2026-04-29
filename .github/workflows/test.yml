@@ -1,0 +1,89 @@
+name: Test paper feeds
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: test-paper-feeds
+  cancel-in-progress: true
+
+jobs:
+  test-recommend:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Typecheck
+        run: npm run build
+
+      - name: Run recommendation feed in test mode
+        env:
+          ZOTERO_ID: ${{ secrets.ZOTERO_ID }}
+          ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OPENAI_API_BASE: ${{ secrets.OPENAI_API_BASE }}
+          EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
+          EMBEDDING_API_BASE: ${{ secrets.EMBEDDING_API_BASE }}
+          SENDER: ${{ secrets.SENDER }}
+          SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
+          RECEIVER: ${{ secrets.RECEIVER }}
+          SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
+          SMTP_PORT: ${{ secrets.SMTP_PORT }}
+        run: |
+          cat > config/custom.yaml <<'YAML'
+          zotero:
+            user_id: ${oc.env:ZOTERO_ID}
+            api_key: ${oc.env:ZOTERO_KEY}
+            include_path: null
+            exclude_path: null
+
+          email:
+            sender: ${oc.env:SENDER}
+            receiver: ${oc.env:RECEIVER}
+            smtp_server: ${oc.env:SMTP_SERVER}
+            smtp_port: ${oc.env:SMTP_PORT}
+            sender_password: ${oc.env:SENDER_PASSWORD}
+
+          llm:
+            api:
+              key: null
+              base_url: ${oc.env:OPENAI_API_BASE}
+            generation_kwargs:
+              max_tokens: 1024
+              model: gpt-4o-mini
+            language: Chinese
+
+          reranker:
+            local:
+              model: jinaai/jina-embeddings-v5-text-nano
+              encode_kwargs:
+                task: retrieval
+                prompt_name: document
+            api:
+              key: ${oc.env:EMBEDDING_API_KEY}
+              base_url: ${oc.env:EMBEDDING_API_BASE}
+              model: null
+              batch_size: null
+
+          executor:
+            debug: false
+            send_empty: true
+            max_paper_num: 3
+            source: ["Nature"]
+            reranker: local
+          YAML
+          npm start
