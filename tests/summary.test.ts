@@ -1,6 +1,16 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createOpenAISummarizer, summarizeRankedPapers } from "../src/summary.js";
-import type { RankedPaper } from "../src/types.js";
+import type { SummaryConfig } from "../src/app-config.js";
+import type { RecommendedPaper } from "../src/types.js";
+
+const summaryConfig: SummaryConfig = {
+  enabled: true,
+  baseUrl: "https://example.test/v1",
+  model: "Qwen/Qwen3-8B",
+  apiKeyEnv: "SUMMARY_API_KEY",
+  language: "Chinese",
+  maxTokens: 2048
+};
 
 describe("createOpenAISummarizer", () => {
   afterEach(() => {
@@ -21,12 +31,8 @@ describe("createOpenAISummarizer", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const summarize = createOpenAISummarizer({
-      apiKey: "llm-key",
-      baseUrl: "https://example.test/v1",
-      model: "Qwen/Qwen3-8B",
-      language: "Chinese",
-      maxTokens: 2048
+    const summarize = createOpenAISummarizer(summaryConfig, {
+      SUMMARY_API_KEY: "llm-key"
     });
 
     await summarize({
@@ -36,12 +42,19 @@ describe("createOpenAISummarizer", () => {
       url: "https://example.test/paper",
       publishedAt: null,
       score: 0.9,
-      matchedZoteroTitle: "Transport equity"
+      matchContext: {
+        bestMatchSource: "zotero",
+        bestMatchTitle: "Transport equity",
+        bestMatchTopics: ["transport"]
+      }
     });
 
     expect(fetchMock).toHaveBeenCalledWith(
       "https://example.test/v1/chat/completions",
       expect.objectContaining({
+        headers: expect.objectContaining({
+          Authorization: "Bearer llm-key"
+        }),
         body: expect.stringContaining('"model":"Qwen/Qwen3-8B"')
       })
     );
@@ -50,8 +63,24 @@ describe("createOpenAISummarizer", () => {
     expect(String(requestInit?.body)).toContain('"max_tokens":2048');
   });
 
+  it("throws a clear error when the configured summary API key is missing", async () => {
+    const summarize = createOpenAISummarizer(summaryConfig, {});
+
+    await expect(
+      summarize({
+        journal: "Nature",
+        title: "Urban mobility",
+        abstract: "A paper about urban mobility.",
+        url: "https://example.test/paper",
+        publishedAt: null,
+        score: 0.9,
+        matchContext: null
+      })
+    ).rejects.toThrow("Missing summary API key: SUMMARY_API_KEY.");
+  });
+
   it("adds TLDR summaries to ranked papers", async () => {
-    const papers: RankedPaper[] = [
+    const papers: RecommendedPaper[] = [
       {
         journal: "Nature",
         title: "Urban mobility",
@@ -59,7 +88,11 @@ describe("createOpenAISummarizer", () => {
         url: "https://example.test/paper",
         publishedAt: null,
         score: 0.9,
-        matchedZoteroTitle: "Transport equity"
+        matchContext: {
+          bestMatchSource: "zotero",
+          bestMatchTitle: "Transport equity",
+          bestMatchTopics: ["transport"]
+        }
       }
     ];
 

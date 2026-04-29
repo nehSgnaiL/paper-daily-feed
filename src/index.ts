@@ -1,15 +1,33 @@
 import { config as loadDotenv } from "dotenv";
+import { pathToFileURL } from "node:url";
 
 loadDotenv({ path: [".env.local", ".env"] });
 
 import journals from "../data/journals.config.js";
-import { loadConfig } from "./config.js";
+import { loadAppConfig } from "./app-config.js";
+import { parseCliMode, type CliMode } from "./cli.js";
 import { renderEmail, sendEmail } from "./email.js";
-import { filterSubscribedJournals } from "./journals.js";
-import { rankCandidates } from "./recommender.js";
+import { resolveFeedSources } from "./feed-sources.js";
+import { buildInterestCorpus } from "./interest-corpus.js";
+import { rankPapers } from "./matching.js";
 import { fetchJournalFeeds, filterRecentPapers } from "./rss.js";
 import { createOpenAISummarizer, summarizeRankedPapers } from "./summary.js";
-import { fetchZoteroCorpus } from "./zotero.js";
+
+type Env = Record<string, string | undefined>;
+
+const PROFILE_TEMPLATE = {
+  interests: {
+    profile: {
+      enabled: true,
+      summary: "",
+      topics: [],
+      methods: [],
+      favoriteJournals: [],
+      avoidTopics: [],
+      referencePapers: []
+    }
+  }
+};
 
 function describeDelivery(result: unknown): string {
   if (!result || typeof result !== "object") {
@@ -26,46 +44,68 @@ function describeDelivery(result: unknown): string {
   return details.length > 0 ? ` (${details.join("; ")})` : "";
 }
 
-async function main(): Promise<void> {
-  const config = loadConfig();
+async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config">, env: Env): Promise<void> {
+  const config = loadAppConfig(env);
 
-  console.log(`Fetching Zotero corpus...`);
-  const corpus = await fetchZoteroCorpus(config);
-  if (corpus.length === 0) {
-    throw new Error("No Zotero papers with abstracts found. Add abstracts or check Zotero API permissions.");
+  console.log("Building interest corpus...");
+  const interestCorpus = await buildInterestCorpus(config.interests, env);
+  if (interestCorpus.length === 0) {
+    throw new Error("Interest corpus is empty. Enable profile or Zotero interests in app config.");
   }
-  console.log(`Fetched ${corpus.length} Zotero corpus papers.`);
+  console.log(`Built ${interestCorpus.length} interest documents.`);
 
-  const subscribedJournals = filterSubscribedJournals(journals, config.subscriptions);
-  console.log(`Fetching ${subscribedJournals.length} journal RSS feeds...`);
-  const allFeedPapers = await fetchJournalFeeds(subscribedJournals);
-  const recentPapers = filterRecentPapers(allFeedPapers, config.maxPaperAgeDays);
+  const feedSources = resolveFeedSources(journals, config.feeds);
+  console.log(`Fetching ${feedSources.length} RSS feeds...`);
+  const allFeedPapers = await fetchJournalFeeds(feedSources);
+  const recentPapers = filterRecentPapers(allFeedPapers, config.matching.maxPaperAgeDays);
   console.log(`Fetched ${allFeedPapers.length} RSS papers; ${recentPapers.length} are recent.`);
 
-  let ranked = await rankCandidates(config.embedding, recentPapers, corpus, config.maxPapers);
-  if (ranked.length === 0 && !config.sendEmpty) {
+  let ranked = await rankPapers(config.matching, recentPapers, interestCorpus, env);
+  if (ranked.length === 0 && !config.runtime.sendEmpty && mode === "run") {
     console.log("No recommended papers above threshold. Skipping email.");
     return;
   }
 
-  if (config.generation && ranked.length > 0) {
-    ranked = await summarizeRankedPapers(ranked, createOpenAISummarizer(config.generation));
+  const summaryApiKey = env[config.summary.apiKeyEnv]?.trim();
+  if (config.summary.enabled && summaryApiKey && ranked.length > 0) {
+    ranked = await summarizeRankedPapers(ranked, createOpenAISummarizer(config.summary, env));
   }
 
   const html = renderEmail(ranked);
-  const date = new Date().toISOString().slice(0, 10);
-  if (config.debug) {
-    console.log(`Debug mode enabled. Skipping email send for ${ranked.length} recommendations.`);
+  if (mode === "preview-email" || config.runtime.debug) {
+    if (config.runtime.debug && mode === "run") {
+      console.log(`Debug mode enabled. Skipping email send for ${ranked.length} recommendations.`);
+    }
     console.log(html);
     return;
   }
 
-  console.log(`Sending ${ranked.length} recommendations to ${config.email.receiver}...`);
-  const delivery = await sendEmail(config, html, `Daily paper feeds ${date}`);
+  const date = new Date().toISOString().slice(0, 10);
+  console.log(`Sending ${ranked.length} recommendations via SMTP...`);
+  const delivery = await sendEmail(config.delivery, env, html, `Daily paper feeds ${date}`);
   console.log(`Sent ${ranked.length} recommendations${describeDelivery(delivery)}.`);
 }
 
-main().catch((error: unknown) => {
-  console.error(error);
-  process.exitCode = 1;
-});
+export async function main(args: string[] = process.argv.slice(2), env: Env = process.env): Promise<void> {
+  const mode = parseCliMode(args);
+
+  if (mode === "setup-profile") {
+    console.log(JSON.stringify(PROFILE_TEMPLATE, null, 2));
+    return;
+  }
+
+  if (mode === "test-config") {
+    loadAppConfig(env);
+    console.log("Config is valid.");
+    return;
+  }
+
+  await runPipeline(mode, env);
+}
+
+if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+  main().catch((error: unknown) => {
+    console.error(error);
+    process.exitCode = 1;
+  });
+}

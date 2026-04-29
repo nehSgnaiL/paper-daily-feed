@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 import nodemailer from "nodemailer";
 import { renderEmail, sendEmail } from "../src/email.js";
-import type { AppConfig } from "../src/config.js";
+import type { DeliveryConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
 
 vi.mock("nodemailer", () => ({
@@ -69,28 +69,20 @@ describe("renderEmail", () => {
 });
 
 describe("sendEmail", () => {
-  const config: AppConfig = {
-    zotero: {
-      userId: "123456",
-      apiKey: "zotero-key",
-      libraryType: "user",
-      includePath: null,
-      excludePath: null
-    },
-    email: {
-      sender: "sender@example.test",
-      senderPassword: "sender-password",
-      receiver: "receiver@example.test",
-      smtpServer: "smtp.example.test",
-      smtpPort: 465
-    },
-    maxPaperAgeDays: 7,
-    maxPapers: 3,
-    debug: false,
-    subscriptions: ["Nature"],
-    embedding: { provider: "api", baseUrl: "https://example.test", model: "model", batchSize: null },
-    generation: null,
-    sendEmpty: true
+  const delivery: DeliveryConfig = {
+    mode: "smtp",
+    fromEnv: "MAIL_FROM",
+    toEnv: "MAIL_TO",
+    smtpHostEnv: "MAIL_HOST",
+    smtpPortEnv: "MAIL_PORT",
+    smtpPasswordEnv: "MAIL_PASSWORD"
+  };
+  const env = {
+    MAIL_FROM: "sender@example.test",
+    MAIL_TO: "receiver@example.test",
+    MAIL_HOST: "smtp.example.test",
+    MAIL_PORT: "465",
+    MAIL_PASSWORD: "sender-password"
   };
 
   beforeEach(() => {
@@ -104,7 +96,7 @@ describe("sendEmail", () => {
     });
     vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as never);
 
-    const result = await sendEmail(config, "<p>Hello</p>", "Subject");
+    const result = await sendEmail(delivery, env, "<p>Hello</p>", "Subject");
 
     expect(nodemailer.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -128,5 +120,11 @@ describe("sendEmail", () => {
       messageId: "message-id",
       accepted: ["receiver@example.test"]
     });
+  });
+
+  it("throws a clear error when required delivery env is missing", async () => {
+    await expect(sendEmail(delivery, {}, "<p>Hello</p>", "Subject")).rejects.toThrow(
+      "Missing required delivery environment variable: MAIL_FROM."
+    );
   });
 });

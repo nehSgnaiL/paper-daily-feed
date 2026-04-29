@@ -1,5 +1,5 @@
 import Parser from "rss-parser";
-import type { FeedPaper, Journal } from "./types.js";
+import type { FeedPaper, FeedSource, Journal } from "./types.js";
 import { stripHtml } from "./text.js";
 
 type ParserItem = {
@@ -18,6 +18,12 @@ const RSS_HEADERS = {
   Accept: "application/rss+xml, application/xml, text/xml, */*",
   "User-Agent": "paper-daily-feed/0.1 (+https://github.com/nehSgnaiL/paper-daily-feed)"
 };
+
+type FetchableFeed = Journal | FeedSource;
+
+function feedLabel(feed: FetchableFeed): string {
+  return "kind" in feed ? feed.name : (feed.abbr ?? feed.name);
+}
 
 export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper | null {
   const title = stripHtml(item.title ?? "");
@@ -39,7 +45,7 @@ export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper 
   };
 }
 
-export async function fetchJournalFeed(journal: Journal): Promise<FeedPaper[]> {
+export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
   const response = await fetch(journal.rss, {
     headers: RSS_HEADERS
   });
@@ -50,11 +56,11 @@ export async function fetchJournalFeed(journal: Journal): Promise<FeedPaper[]> {
 
   const feed = await parser.parseString(await response.text());
   return feed.items
-    .map((item) => normalizeFeedItem(journal.abbr ?? journal.name, item))
+    .map((item) => normalizeFeedItem(feedLabel(journal), item))
     .filter((paper): paper is FeedPaper => paper !== null);
 }
 
-export async function fetchJournalFeeds(journals: Journal[]): Promise<FeedPaper[]> {
+export async function fetchJournalFeeds(journals: FetchableFeed[]): Promise<FeedPaper[]> {
   const results = await Promise.allSettled(journals.map((journal) => fetchJournalFeed(journal)));
   return results.flatMap((result, index) => {
     if (result.status === "fulfilled") {

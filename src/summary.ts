@@ -1,15 +1,23 @@
-import type { GenerationConfig } from "./config.js";
-import type { RankedPaper } from "./types.js";
+import type { SummaryConfig } from "./app-config.js";
+import type { RecommendedPaper } from "./types.js";
 
-export type SummarizePaper = (paper: RankedPaper) => Promise<string>;
+export type SummarizePaper = (paper: RecommendedPaper) => Promise<string>;
 
-export function createOpenAISummarizer(config: GenerationConfig): SummarizePaper {
-  return async (paper: RankedPaper) => {
+export function createOpenAISummarizer(
+  config: SummaryConfig,
+  env: Record<string, string | undefined> = process.env
+): SummarizePaper {
+  return async (paper: RecommendedPaper) => {
+    const apiKey = env[config.apiKeyEnv]?.trim();
+    if (!apiKey) {
+      throw new Error(`Missing summary API key: ${config.apiKeyEnv}.`);
+    }
+
     const endpoint = `${config.baseUrl.replace(/\/$/, "")}/chat/completions`;
     const response = await fetch(endpoint, {
       method: "POST",
       headers: {
-        Authorization: `Bearer ${config.apiKey}`,
+        Authorization: `Bearer ${apiKey}`,
         "Content-Type": "application/json"
       },
       body: JSON.stringify({
@@ -41,10 +49,10 @@ export function createOpenAISummarizer(config: GenerationConfig): SummarizePaper
 }
 
 export async function summarizeRankedPapers(
-  papers: RankedPaper[],
+  papers: RecommendedPaper[],
   summarizePaper: SummarizePaper
-): Promise<RankedPaper[]> {
-  const summarized: RankedPaper[] = [];
+): Promise<RecommendedPaper[]> {
+  const summarized: RecommendedPaper[] = [];
 
   for (const paper of papers) {
     summarized.push({

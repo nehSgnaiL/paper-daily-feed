@@ -1,5 +1,5 @@
 import nodemailer from "nodemailer";
-import type { AppConfig } from "./config.js";
+import type { DeliveryConfig } from "./app-config.js";
 import type { RecommendedPaper } from "./types.js";
 
 const ABSTRACT_EXCERPT_LIMIT = 280;
@@ -117,23 +117,51 @@ export function renderEmail(papers: RenderablePaper[]): string {
 </html>`;
 }
 
-export async function sendEmail(config: AppConfig, html: string, subject: string): Promise<unknown> {
+function required(env: Record<string, string | undefined>, name: string): string {
+  const value = env[name]?.trim();
+  if (!value) {
+    throw new Error(`Missing required delivery environment variable: ${name}.`);
+  }
+  return value;
+}
+
+function requiredPort(env: Record<string, string | undefined>, name: string): number {
+  const value = required(env, name);
+  const port = Number(value);
+  if (!Number.isFinite(port)) {
+    throw new Error(`Expected delivery environment variable ${name} to be a number.`);
+  }
+  return port;
+}
+
+export async function sendEmail(
+  delivery: DeliveryConfig,
+  env: Record<string, string | undefined>,
+  html: string,
+  subject: string
+): Promise<unknown> {
+  const sender = required(env, delivery.fromEnv);
+  const receiver = required(env, delivery.toEnv);
+  const smtpServer = required(env, delivery.smtpHostEnv);
+  const smtpPort = requiredPort(env, delivery.smtpPortEnv);
+  const senderPassword = required(env, delivery.smtpPasswordEnv);
+
   const transporter = nodemailer.createTransport({
-    host: config.email.smtpServer,
-    port: config.email.smtpPort,
-    secure: config.email.smtpPort === 465,
+    host: smtpServer,
+    port: smtpPort,
+    secure: smtpPort === 465,
     connectionTimeout: 15000,
     greetingTimeout: 15000,
     socketTimeout: 30000,
     auth: {
-      user: config.email.sender,
-      pass: config.email.senderPassword
+      user: sender,
+      pass: senderPassword
     }
   });
 
   return transporter.sendMail({
-    from: config.email.sender,
-    to: config.email.receiver,
+    from: sender,
+    to: receiver,
     subject,
     html
   });

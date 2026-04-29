@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from "vitest";
-import { fetchJournalFeed, normalizeFeedItem } from "../src/rss.js";
+import { fetchJournalFeed, fetchJournalFeeds, normalizeFeedItem } from "../src/rss.js";
 
 describe("normalizeFeedItem", () => {
   afterEach(() => {
@@ -66,5 +66,40 @@ describe("normalizeFeedItem", () => {
         })
       })
     );
+  });
+
+  it("uses feed source names as fetched paper labels", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Custom Feed</title>
+              <item>
+                <title>Custom paper</title>
+                <link>https://example.test/custom-paper</link>
+                <description>Custom abstract.</description>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    const papers = await fetchJournalFeeds([
+      {
+        kind: "custom",
+        name: "Custom Digest",
+        rss: "https://example.test/feed.xml"
+      }
+    ]);
+
+    expect(papers[0]?.journal).toBe("Custom Digest");
   });
 });
