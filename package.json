@@ -6,8 +6,10 @@
   "scripts": {
     "build": "tsc --noEmit",
     "test": "vitest run",
-    "test:feed": "tsx src/index.ts",
-    "start": "tsx src/index.ts"
+    "start": "tsx src/index.ts",
+    "preview-email": "tsx src/index.ts preview-email",
+    "setup-profile": "tsx src/index.ts setup-profile",
+    "test:config": "tsx src/index.ts test-config"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
