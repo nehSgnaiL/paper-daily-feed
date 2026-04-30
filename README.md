@@ -54,9 +54,9 @@ Minimal profile-first example:
   "matching": {
     "provider": "api",
     "api": {
-      "baseUrl": "https://api.openai.com/v1",
+      "baseUrl": "${oc.env:EMBEDDING_BASE_URL}",
       "model": "text-embedding-3-small",
-      "apiKeyEnv": "EMBEDDING_API_KEY",
+      "apiKey": "${oc.env:EMBEDDING_API_KEY}",
       "batchSize": 32
     },
     "local": {
@@ -68,19 +68,19 @@ Minimal profile-first example:
   },
   "summary": {
     "enabled": false,
-    "baseUrl": "https://api.openai.com/v1",
+    "baseUrl": "${oc.env:OPENAI_BASE_URL}",
     "model": "gpt-4o-mini",
-    "apiKeyEnv": "OPENAI_API_KEY",
+    "apiKey": "${oc.env:OPENAI_API_KEY}",
     "language": "English",
     "maxTokens": 1024
   },
   "delivery": {
     "mode": "smtp",
-    "fromEnv": "SENDER",
-    "toEnv": "RECEIVER",
-    "smtpHostEnv": "SMTP_SERVER",
-    "smtpPortEnv": "SMTP_PORT",
-    "smtpPasswordEnv": "SENDER_PASSWORD"
+    "from": "${oc.env:SENDER}",
+    "to": "${oc.env:RECEIVER}",
+    "smtpHost": "${oc.env:SMTP_SERVER}",
+    "smtpPort": "${oc.env:SMTP_PORT}",
+    "smtpPassword": "${oc.env:SENDER_PASSWORD}"
   },
   "runtime": {
     "debug": false,
@@ -99,8 +99,8 @@ Zotero-first example:
     },
     "zotero": {
       "enabled": true,
-      "userId": "12345678",
-      "apiKeyEnv": "ZOTERO_KEY",
+      "userId": "${oc.env:ZOTERO_ID}",
+      "apiKey": "${oc.env:ZOTERO_KEY}",
       "libraryType": "user",
       "includeCollections": ["2026/survey/**"],
       "excludeCollections": ["archive/**"]
@@ -124,11 +124,22 @@ Create these secrets as needed:
 | `RECEIVER` | sending email |
 | `SMTP_SERVER` | sending email |
 | `SMTP_PORT` | sending email |
+| `OPENAI_BASE_URL` | using summary generation API via a secret-backed URL |
+| `EMBEDDING_BASE_URL` | using embeddings API via a secret-backed URL |
 | `EMBEDDING_API_KEY` | using API embeddings |
 | `OPENAI_API_KEY` | generating TLDR summaries |
+| `ZOTERO_ID` | using Zotero interests via a secret-backed user or group id |
 | `ZOTERO_KEY` | using Zotero interests |
 
-Keep credentials in separate secrets and reference them through `apiKeyEnv` or delivery env fields. `APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
+Use `${oc.env:NAME}` inside `APP_CONFIG` for sensitive values instead of pasting them directly into the JSON blob. `APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
+
+Example secret-backed fields:
+
+- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
+- `"userId": "${oc.env:ZOTERO_ID}"`
+- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
+
+Fields not shown with `${oc.env:...}` can be kept as plain config values in `APP_CONFIG`.
 
 ## Matching
 
@@ -168,7 +179,7 @@ npm run test:config
 npm run preview-email
 ```
 
-For local development, you can set `APP_CONFIG` in `.env.local` or create `config/app.json`.
+For local development, you can set `APP_CONFIG` in `.env.local` or create `config/app.json`. `${oc.env:NAME}` references are resolved when the config loads, so the same config shape works locally and in GitHub Actions.
 
 ## Workflows
 

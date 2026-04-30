@@ -117,34 +117,31 @@ export function renderEmail(papers: RenderablePaper[]): string {
 </html>`;
 }
 
-function required(env: Record<string, string | undefined>, name: string): string {
-  const value = env[name]?.trim();
-  if (!value) {
-    throw new Error(`Missing required delivery environment variable: ${name}.`);
+function requiredValue(value: string, label: string): string {
+  const normalized = value.trim();
+  if (!normalized) {
+    throw new Error(`Missing required delivery value: ${label}.`);
+  }
+  return normalized;
+}
+
+function requiredPort(value: number, label: string): number {
+  if (!Number.isFinite(value)) {
+    throw new Error(`Expected delivery value ${label} to be a number.`);
   }
   return value;
 }
 
-function requiredPort(env: Record<string, string | undefined>, name: string): number {
-  const value = required(env, name);
-  const port = Number(value);
-  if (!Number.isFinite(port)) {
-    throw new Error(`Expected delivery environment variable ${name} to be a number.`);
-  }
-  return port;
-}
-
 export async function sendEmail(
   delivery: DeliveryConfig,
-  env: Record<string, string | undefined>,
   html: string,
   subject: string
 ): Promise<unknown> {
-  const sender = required(env, delivery.fromEnv);
-  const receiver = required(env, delivery.toEnv);
-  const smtpServer = required(env, delivery.smtpHostEnv);
-  const smtpPort = requiredPort(env, delivery.smtpPortEnv);
-  const senderPassword = required(env, delivery.smtpPasswordEnv);
+  const sender = requiredValue(delivery.from, "from");
+  const receiver = requiredValue(delivery.to, "to");
+  const smtpServer = requiredValue(delivery.smtpHost, "smtpHost");
+  const smtpPort = requiredPort(delivery.smtpPort, "smtpPort");
+  const senderPassword = requiredValue(delivery.smtpPassword, "smtpPassword");
 
   const transporter = nodemailer.createTransport({
     host: smtpServer,

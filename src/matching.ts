@@ -129,9 +129,9 @@ export async function createLocalEmbedder(config: MatchingConfig["local"]): Prom
 
 export async function createEmbedder(
   config: MatchingConfig,
-  env: Record<string, string | undefined>
+  _env: Record<string, string | undefined> = process.env
 ): Promise<EmbedTexts> {
-  const apiKey = env[config.api.apiKeyEnv] ?? "";
+  const apiKey = config.api.apiKey.trim();
   if (config.provider === "api" && apiKey && config.api.baseUrl) {
     return createOpenAICompatibleEmbedder(config.api, apiKey);
   }

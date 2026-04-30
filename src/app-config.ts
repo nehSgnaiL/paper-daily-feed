@@ -31,7 +31,7 @@ export type ProfileInterestConfig = {
 export type ZoteroInterestConfig = {
   enabled: boolean;
   userId: string;
-  apiKeyEnv: string;
+  apiKey: string;
   libraryType: "user" | "group";
   includeCollections: string[];
   excludeCollections: string[];
@@ -53,7 +53,7 @@ export type MatchingConfig = {
   api: {
     baseUrl: string;
     model: string;
-    apiKeyEnv: string;
+    apiKey: string;
     batchSize: number;
   };
   local: {
@@ -68,22 +68,24 @@ export type SummaryConfig = {
   enabled: boolean;
   baseUrl: string;
   model: string;
-  apiKeyEnv: string;
+  apiKey: string;
   language: string;
   maxTokens: number;
 };
 
 export type DeliveryConfig = {
   mode: "smtp";
-  fromEnv: string;
-  toEnv: string;
-  smtpHostEnv: string;
-  smtpPortEnv: string;
-  smtpPasswordEnv: string;
+  from: string;
+  to: string;
+  smtpHost: string;
+  smtpPort: number;
+  smtpPassword: string;
 };
 
 type Env = Record<string, string | undefined>;
 type UnknownRecord = Record<string, unknown>;
+
+const ENV_REFERENCE = /^\$\{oc\.env:([A-Z0-9_]+)\}$/;
 
 function asRecord(value: unknown): UnknownRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as UnknownRecord) : {};
@@ -185,6 +187,42 @@ function parseAppConfigJson(configText: string): UnknownRecord {
   }
 }
 
+function resolveEnvReference(value: string, env: Env): string {
+  const match = value.match(ENV_REFERENCE);
+  if (!match) {
+    return value;
+  }
+
+  const envName = match[1];
+  const resolved = env[envName];
+  if (resolved === undefined) {
+    throw new Error(`Missing environment variable for app config secret reference: ${envName}.`);
+  }
+
+  return resolved;
+}
+
+function resolveConfigReferences(value: unknown, env: Env): unknown {
+  if (typeof value === "string") {
+    return resolveEnvReference(value, env);
+  }
+
+  if (Array.isArray(value)) {
+    return value.map((item) => resolveConfigReferences(item, env));
+  }
+
+  if (value && typeof value === "object") {
+    return Object.fromEntries(
+      Object.entries(value as Record<string, unknown>).map(([key, nestedValue]) => [
+        key,
+        resolveConfigReferences(nestedValue, env)
+      ])
+    );
+  }
+
+  return value;
+}
+
 function readLocalConfig(): string | undefined {
   return existsSync("config/app.json") ? readFileSync("config/app.json", "utf8") : undefined;
 }
@@ -215,7 +253,7 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
       zotero: {
         enabled: asBoolean(zotero.enabled, false),
         userId: asString(zotero.userId, ""),
-        apiKeyEnv: asString(zotero.apiKeyEnv, "ZOTERO_KEY"),
+        apiKey: asString(zotero.apiKey, ""),
         libraryType: asLibraryType(zotero.libraryType),
         includeCollections: asStringArray(zotero.includeCollections, []),
         excludeCollections: asStringArray(zotero.excludeCollections, [])
@@ -230,7 +268,7 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
       api: {
         baseUrl: asString(matchingApi.baseUrl, "https://api.openai.com/v1"),
         model: asString(matchingApi.model, "text-embedding-3-small"),
-        apiKeyEnv: asString(matchingApi.apiKeyEnv, "EMBEDDING_API_KEY"),
+        apiKey: asString(matchingApi.apiKey, ""),
         batchSize: asNumber(matchingApi.batchSize, 32)
       },
       local: {
@@ -244,17 +282,17 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
       enabled: asBoolean(summary.enabled, false),
       baseUrl: asString(summary.baseUrl, "https://api.openai.com/v1"),
       model: asString(summary.model, "gpt-4o-mini"),
-      apiKeyEnv: asString(summary.apiKeyEnv, "OPENAI_API_KEY"),
+      apiKey: asString(summary.apiKey, ""),
       language: asString(summary.language, "English"),
       maxTokens: asNumber(summary.maxTokens, 1024)
     },
     delivery: {
       mode: "smtp",
-      fromEnv: asString(delivery.fromEnv, "SENDER"),
-      toEnv: asString(delivery.toEnv, "RECEIVER"),
-      smtpHostEnv: asString(delivery.smtpHostEnv, "SMTP_SERVER"),
-      smtpPortEnv: asString(delivery.smtpPortEnv, "SMTP_PORT"),
-      smtpPasswordEnv: asString(delivery.smtpPasswordEnv, "SENDER_PASSWORD")
+      from: asString(delivery.from, ""),
+      to: asString(delivery.to, ""),
+      smtpHost: asString(delivery.smtpHost, ""),
+      smtpPort: asNumber(delivery.smtpPort, 465),
+      smtpPassword: asString(delivery.smtpPassword, "")
     },
     runtime: {
       debug: asBoolean(runtime.debug, false),
@@ -270,5 +308,5 @@ export function loadAppConfig(env: Env = process.env, explicitConfigText?: strin
     throw new Error("Missing app config. Set APP_CONFIG or provide a local config file.");
   }
 
-  return normalizeAppConfig(parseAppConfigJson(configText));
+  return normalizeAppConfig(asRecord(resolveConfigReferences(parseAppConfigJson(configText), env)));
 }

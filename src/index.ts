@@ -66,8 +66,7 @@ async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config
     return;
   }
 
-  const summaryApiKey = env[config.summary.apiKeyEnv]?.trim();
-  if (config.summary.enabled && summaryApiKey && ranked.length > 0) {
+  if (config.summary.enabled && config.summary.apiKey.trim() && ranked.length > 0) {
     ranked = await summarizeRecommendedPapers(ranked, createOpenAISummarizer(config.summary, env));
   }
 
@@ -82,7 +81,7 @@ async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config
 
   const date = new Date().toISOString().slice(0, 10);
   console.log(`Sending ${ranked.length} recommendations via SMTP...`);
-  const delivery = await sendEmail(config.delivery, env, html, `Daily paper feeds ${date}`);
+  const delivery = await sendEmail(config.delivery, html, `Daily paper feeds ${date}`);
   console.log(`Sent ${ranked.length} recommendations${describeDelivery(delivery)}.`);
 }
 

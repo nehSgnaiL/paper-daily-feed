@@ -7,7 +7,7 @@ const summaryConfig: SummaryConfig = {
   enabled: true,
   baseUrl: "https://example.test/v1",
   model: "Qwen/Qwen3-8B",
-  apiKeyEnv: "SUMMARY_API_KEY",
+  apiKey: "llm-key",
   language: "Chinese",
   maxTokens: 2048
 };
@@ -31,9 +31,7 @@ describe("createOpenAISummarizer", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const summarize = createOpenAISummarizer(summaryConfig, {
-      SUMMARY_API_KEY: "llm-key"
-    });
+    const summarize = createOpenAISummarizer(summaryConfig);
 
     await summarize({
       journal: "Nature",
@@ -64,7 +62,7 @@ describe("createOpenAISummarizer", () => {
   });
 
   it("throws a clear error when the configured summary API key is missing", async () => {
-    const summarize = createOpenAISummarizer(summaryConfig, {});
+    const summarize = createOpenAISummarizer({ ...summaryConfig, apiKey: "" });
 
     await expect(
       summarize({
@@ -76,7 +74,7 @@ describe("createOpenAISummarizer", () => {
         score: 0.9,
         matchContext: null
       })
-    ).rejects.toThrow("Missing summary API key: SUMMARY_API_KEY.");
+    ).rejects.toThrow("Missing summary API key.");
   });
 
   it("adds TLDR summaries to ranked papers", async () => {

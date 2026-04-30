@@ -19,7 +19,7 @@ const matchingConfig: MatchingConfig = {
   api: {
     baseUrl: "https://example.test/v1",
     model: "text-embedding-test",
-    apiKeyEnv: "EMBEDDING_API_KEY",
+    apiKey: "embedding-key",
     batchSize: 2
   },
   local: {
@@ -238,7 +238,7 @@ describe("createEmbedder", () => {
     });
     vi.stubGlobal("fetch", fetchMock);
 
-    const embedTexts = await createEmbedder(matchingConfig, { EMBEDDING_API_KEY: "embedding-key" });
+    const embedTexts = await createEmbedder(matchingConfig);
 
     await embedTexts(["urban mobility"]);
 
@@ -250,7 +250,13 @@ describe("createEmbedder", () => {
     const extractor = vi.fn(async () => ({ tolist: () => [[0.5, 0.5]] }));
     pipelineMock.mockResolvedValue(extractor);
 
-    const embedTexts = await createEmbedder(matchingConfig, {});
+    const embedTexts = await createEmbedder({
+      ...matchingConfig,
+      api: {
+        ...matchingConfig.api,
+        apiKey: ""
+      }
+    });
 
     await expect(embedTexts(["local text"])).resolves.toEqual([[0.5, 0.5]]);
     expect(pipelineMock).toHaveBeenCalledWith("feature-extraction", "local-embedding-test", { dtype: "fp32" });

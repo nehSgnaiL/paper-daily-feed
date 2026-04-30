@@ -158,10 +158,10 @@ function buildCollectionPathMap(collections: ZoteroCollection[]): Map<string, st
 
 export async function fetchZoteroInterestDocuments(
   config: ZoteroInterestConfig,
-  env: Record<string, string | undefined>
+  _env: Record<string, string | undefined> = process.env
 ): Promise<InterestDocument[]> {
   const userId = config.userId.trim();
-  const apiKey = env[config.apiKeyEnv]?.trim() ?? "";
+  const apiKey = config.apiKey.trim();
   if (!config.enabled || !userId || !apiKey) {
     return [];
   }

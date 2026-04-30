@@ -21,7 +21,7 @@ function zoteroConfig(overrides: Partial<ZoteroInterestConfig> = {}): ZoteroInte
   return {
     enabled: false,
     userId: "",
-    apiKeyEnv: "ZOTERO_KEY",
+    apiKey: "",
     libraryType: "user",
     includeCollections: [],
     excludeCollections: [],
@@ -146,10 +146,10 @@ describe("buildInterestCorpus", () => {
         zotero: {
           enabled: true,
           userId: "123",
-          apiKeyEnv: "ZOTERO_KEY"
+          apiKey: "secret"
         }
       }),
-      { ZOTERO_KEY: "secret" },
+      {},
       async () => zoteroDocuments
     );
 
@@ -169,10 +169,10 @@ describe("buildInterestCorpus", () => {
         zotero: {
           enabled: false,
           userId: "123",
-          apiKeyEnv: "ZOTERO_KEY"
+          apiKey: "secret"
         }
       }),
-      { ZOTERO_KEY: "secret" },
+      {},
       async () => {
         fetchCalls += 1;
         return [];

@@ -5,12 +5,12 @@ export type SummarizePaper = (paper: RecommendedPaper) => Promise<string>;
 
 export function createOpenAISummarizer(
   config: SummaryConfig,
-  env: Record<string, string | undefined> = process.env
+  _env: Record<string, string | undefined> = process.env
 ): SummarizePaper {
   return async (paper: RecommendedPaper) => {
-    const apiKey = env[config.apiKeyEnv]?.trim();
+    const apiKey = config.apiKey.trim();
     if (!apiKey) {
-      throw new Error(`Missing summary API key: ${config.apiKeyEnv}.`);
+      throw new Error("Missing summary API key.");
     }
 
     const endpoint = `${config.baseUrl.replace(/\/$/, "")}/chat/completions`;

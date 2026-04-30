@@ -119,12 +119,11 @@ describe("fetchZoteroInterestDocuments", () => {
         {
           enabled: false,
           userId: "123",
-          apiKeyEnv: "ZOTERO_KEY",
+          apiKey: "secret",
           libraryType: "user",
           includeCollections: [],
           excludeCollections: []
-        },
-        { ZOTERO_KEY: "secret" }
+        }
       )
     ).resolves.toEqual([]);
     await expect(
@@ -132,12 +131,11 @@ describe("fetchZoteroInterestDocuments", () => {
         {
           enabled: true,
           userId: "",
-          apiKeyEnv: "ZOTERO_KEY",
+          apiKey: "secret",
           libraryType: "user",
           includeCollections: [],
           excludeCollections: []
-        },
-        { ZOTERO_KEY: "secret" }
+        }
       )
     ).resolves.toEqual([]);
     await expect(
@@ -145,12 +143,11 @@ describe("fetchZoteroInterestDocuments", () => {
         {
           enabled: true,
           userId: "123",
-          apiKeyEnv: "ZOTERO_KEY",
+          apiKey: "",
           libraryType: "user",
           includeCollections: [],
           excludeCollections: []
-        },
-        {}
+        }
       )
     ).resolves.toEqual([]);
 

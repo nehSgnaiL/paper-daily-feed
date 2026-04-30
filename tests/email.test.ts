@@ -71,18 +71,11 @@ describe("renderEmail", () => {
 describe("sendEmail", () => {
   const delivery: DeliveryConfig = {
     mode: "smtp",
-    fromEnv: "MAIL_FROM",
-    toEnv: "MAIL_TO",
-    smtpHostEnv: "MAIL_HOST",
-    smtpPortEnv: "MAIL_PORT",
-    smtpPasswordEnv: "MAIL_PASSWORD"
-  };
-  const env = {
-    MAIL_FROM: "sender@example.test",
-    MAIL_TO: "receiver@example.test",
-    MAIL_HOST: "smtp.example.test",
-    MAIL_PORT: "465",
-    MAIL_PASSWORD: "sender-password"
+    from: "sender@example.test",
+    to: "receiver@example.test",
+    smtpHost: "smtp.example.test",
+    smtpPort: 465,
+    smtpPassword: "sender-password"
   };
 
   beforeEach(() => {
@@ -96,7 +89,7 @@ describe("sendEmail", () => {
     });
     vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as never);
 
-    const result = await sendEmail(delivery, env, "<p>Hello</p>", "Subject");
+    const result = await sendEmail(delivery, "<p>Hello</p>", "Subject");
 
     expect(nodemailer.createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -122,9 +115,15 @@ describe("sendEmail", () => {
     });
   });
 
-  it("throws a clear error when required delivery env is missing", async () => {
-    await expect(sendEmail(delivery, {}, "<p>Hello</p>", "Subject")).rejects.toThrow(
-      "Missing required delivery environment variable: MAIL_FROM."
+  it("throws a clear error when a required delivery value is missing", async () => {
+    await expect(sendEmail({ ...delivery, from: "" }, "<p>Hello</p>", "Subject")).rejects.toThrow(
+      "Missing required delivery value: from."
     );
+  });
+
+  it("throws a clear error when smtpPort is not a valid number", async () => {
+    await expect(
+      sendEmail({ ...delivery, smtpPort: Number.NaN }, "<p>Hello</p>", "Subject")
+    ).rejects.toThrow("Expected delivery value smtpPort to be a number.");
   });
 });

@@ -26,7 +26,7 @@ afterEach(() => {
 });
 
 describe("loadAppConfig", () => {
-  it("loads JSON from APP_CONFIG", () => {
+  it("loads JSON from APP_CONFIG and resolves env placeholders", () => {
     const config = loadAppConfig({
       APP_CONFIG: json({
         interests: {
@@ -46,8 +46,12 @@ describe("loadAppConfig", () => {
             ]
           }
         },
+        summary: {
+          apiKey: "${oc.env:SUMMARY_API_KEY}"
+        },
         matching: { paperLimit: 3 }
-      })
+      }),
+      SUMMARY_API_KEY: "resolved-summary-key"
     });
 
     expect(config.interests.profile).toEqual({
@@ -66,6 +70,7 @@ describe("loadAppConfig", () => {
       ]
     });
     expect(config.matching.paperLimit).toBe(3);
+    expect(config.summary.apiKey).toBe("resolved-summary-key");
   });
 
   it("prefers explicit JSON text over APP_CONFIG and file fallback", () => {
@@ -112,7 +117,7 @@ describe("loadAppConfig", () => {
         zotero: {
           enabled: false,
           userId: "",
-          apiKeyEnv: "ZOTERO_KEY",
+          apiKey: "",
           libraryType: "user",
           includeCollections: [],
           excludeCollections: []
@@ -127,7 +132,7 @@ describe("loadAppConfig", () => {
         api: {
           baseUrl: "https://api.openai.com/v1",
           model: "text-embedding-3-small",
-          apiKeyEnv: "EMBEDDING_API_KEY",
+          apiKey: "",
           batchSize: 32
         },
         local: {
@@ -141,17 +146,17 @@ describe("loadAppConfig", () => {
         enabled: false,
         baseUrl: "https://api.openai.com/v1",
         model: "gpt-4o-mini",
-        apiKeyEnv: "OPENAI_API_KEY",
+        apiKey: "",
         language: "English",
         maxTokens: 1024
       },
       delivery: {
         mode: "smtp",
-        fromEnv: "SENDER",
-        toEnv: "RECEIVER",
-        smtpHostEnv: "SMTP_SERVER",
-        smtpPortEnv: "SMTP_PORT",
-        smtpPasswordEnv: "SENDER_PASSWORD"
+        from: "",
+        to: "",
+        smtpHost: "",
+        smtpPort: 465,
+        smtpPassword: ""
       },
       runtime: {
         debug: false,
@@ -168,5 +173,73 @@ describe("loadAppConfig", () => {
 
   it("wraps invalid JSON parse errors with app config context", () => {
     expect(() => loadAppConfig({}, "{")).toThrow(/^Invalid app config JSON:/);
+  });
+
+  it("resolves ${oc.env:NAME} placeholders throughout the config", () => {
+    const config = loadAppConfig(
+      {
+        ZOTERO_ID: "12345678",
+        ZOTERO_KEY: "zotero-secret",
+        EMBEDDING_BASE_URL: "https://embedding.example.test/v1",
+        EMBEDDING_API_KEY: "embedding-secret",
+        SUMMARY_API_KEY: "summary-secret",
+        MAIL_FROM: "sender@example.test",
+        MAIL_TO: "receiver@example.test",
+        MAIL_HOST: "smtp.example.test",
+        MAIL_PASSWORD: "mail-secret"
+      },
+      json({
+        interests: {
+          zotero: {
+            enabled: true,
+            userId: "${oc.env:ZOTERO_ID}",
+            apiKey: "${oc.env:ZOTERO_KEY}"
+          }
+        },
+        matching: {
+          api: {
+            baseUrl: "${oc.env:EMBEDDING_BASE_URL}",
+            apiKey: "${oc.env:EMBEDDING_API_KEY}"
+          }
+        },
+        summary: {
+          apiKey: "${oc.env:SUMMARY_API_KEY}"
+        },
+        delivery: {
+          from: "${oc.env:MAIL_FROM}",
+          to: "${oc.env:MAIL_TO}",
+          smtpHost: "${oc.env:MAIL_HOST}",
+          smtpPort: 2525,
+          smtpPassword: "${oc.env:MAIL_PASSWORD}"
+        }
+      })
+    );
+
+    expect(config.interests.zotero.userId).toBe("12345678");
+    expect(config.interests.zotero.apiKey).toBe("zotero-secret");
+    expect(config.matching.api.baseUrl).toBe("https://embedding.example.test/v1");
+    expect(config.matching.api.apiKey).toBe("embedding-secret");
+    expect(config.summary.apiKey).toBe("summary-secret");
+    expect(config.delivery).toEqual({
+      mode: "smtp",
+      from: "sender@example.test",
+      to: "receiver@example.test",
+      smtpHost: "smtp.example.test",
+      smtpPort: 2525,
+      smtpPassword: "mail-secret"
+    });
+  });
+
+  it("throws when an ${oc.env:NAME} placeholder references a missing environment variable", () => {
+    expect(() =>
+      loadAppConfig(
+        {},
+        json({
+          summary: {
+            apiKey: "${oc.env:MISSING_SUMMARY_KEY}"
+          }
+        })
+      )
+    ).toThrow("Missing environment variable for app config secret reference: MISSING_SUMMARY_KEY.");
   });
 });
