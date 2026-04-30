@@ -11,15 +11,78 @@ You can enable either path or both. When both are enabled, the app merges them i
 
 ## GitHub Setup
 
-### 1. Repository Secret
+### 1. Create Referenced Secrets
 
-Create this repository secret:
+Use GitHub repository secrets for sensitive values. Inside `APP_CONFIG`, reference them with `${oc.env:NAME}` instead of pasting the secret directly into the JSON.
 
-| Key | Description |
+Example secret-backed fields:
+
+- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
+- `"userId": "${oc.env:ZOTERO_ID}"`
+- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
+
+Fields not shown with `${oc.env:...}` can stay as plain values in `APP_CONFIG`.
+
+Create these secrets as needed:
+
+| Key | Required When |
 | --- | --- |
-| `APP_CONFIG` | Canonical JSON configuration for interests, feeds, matching, summary, delivery, and runtime behavior |
+| `SENDER` | sending email |
+| `SENDER_PASSWORD` | sending email |
+| `RECEIVER` | sending email |
+| `SMTP_SERVER` | sending email |
+| `SMTP_PORT` | sending email |
+| `OPENAI_BASE_URL` | using summary generation API via a secret-backed URL |
+| `EMBEDDING_BASE_URL` | using embeddings API via a secret-backed URL |
+| `EMBEDDING_API_KEY` | using API embeddings |
+| `OPENAI_API_KEY` | generating TLDR summaries |
+| `ZOTERO_ID` | using Zotero interests via a secret-backed user or group id |
+| `ZOTERO_KEY` | using Zotero interests |
 
-Minimal profile-first example:
+### 2. Create `APP_CONFIG`
+
+Create one repository secret named `APP_CONFIG`. This is the canonical JSON config for interests, feeds, matching, summary, delivery, and runtime behavior.
+
+Minimal profile-first `APP_CONFIG`:
+
+```json
+{
+  "interests": {
+    "profile": {
+      "enabled": true,
+      "summary": "Urban mobility, transport equity, and climate adaptation.",
+      "topics": ["urban mobility", "transport equity", "climate adaptation"],
+      "methods": ["GIS", "causal inference"],
+      "favoriteJournals": ["Nature Cities"],
+      "avoidTopics": ["protein folding"],
+      "referencePapers": [
+        {
+          "title": "Transit accessibility and climate resilience",
+          "abstract": "Public transit accessibility, climate adaptation, and cities."
+        }
+      ]
+    },
+    "zotero": {
+      "enabled": false
+    }
+  },
+  "feeds": {
+    "catalogSelections": ["Nature", "Science", "Nature Cities"],
+    "customRss": [
+      {
+        "name": "Example Lab Feed",
+        "rss": "https://example.test/feed.xml"
+      }
+    ]
+  },
+  "runtime": {
+    "debug": false,
+    "sendEmpty": false
+  }
+}
+```
+
+Full example with API matching, optional summaries, and SMTP delivery:
 
 ```json
 {
@@ -89,7 +152,7 @@ Minimal profile-first example:
 }
 ```
 
-Zotero-first example:
+Zotero-first `APP_CONFIG`:
 
 ```json
 {
@@ -113,33 +176,15 @@ Zotero-first example:
 }
 ```
 
-### 2. Repository Secrets
+### 3. Validate the Config
 
-Create these secrets as needed:
+After creating the referenced secrets and `APP_CONFIG`, run:
 
-| Key | Required When |
-| --- | --- |
-| `SENDER` | sending email |
-| `SENDER_PASSWORD` | sending email |
-| `RECEIVER` | sending email |
-| `SMTP_SERVER` | sending email |
-| `SMTP_PORT` | sending email |
-| `OPENAI_BASE_URL` | using summary generation API via a secret-backed URL |
-| `EMBEDDING_BASE_URL` | using embeddings API via a secret-backed URL |
-| `EMBEDDING_API_KEY` | using API embeddings |
-| `OPENAI_API_KEY` | generating TLDR summaries |
-| `ZOTERO_ID` | using Zotero interests via a secret-backed user or group id |
-| `ZOTERO_KEY` | using Zotero interests |
+```bash
+npm run test:config
+```
 
-Use `${oc.env:NAME}` inside `APP_CONFIG` for sensitive values instead of pasting them directly into the JSON blob. `APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
-
-Example secret-backed fields:
-
-- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
-- `"userId": "${oc.env:ZOTERO_ID}"`
-- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
-
-Fields not shown with `${oc.env:...}` can be kept as plain config values in `APP_CONFIG`.
+`APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
 
 ## Matching
 
