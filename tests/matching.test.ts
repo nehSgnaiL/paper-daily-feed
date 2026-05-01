@@ -262,4 +262,20 @@ describe("createEmbedder", () => {
     expect(pipelineMock).toHaveBeenCalledWith("feature-extraction", "local-embedding-test", { dtype: "fp32" });
     expect(extractor).toHaveBeenCalledWith(["local text"], { pooling: "mean", normalize: true });
   });
+
+  it("explains how to fix local embedding model load failures", async () => {
+    pipelineMock.mockRejectedValue(new TypeError("fetch failed"));
+
+    await expect(
+      createEmbedder({
+        ...matchingConfig,
+        api: {
+          ...matchingConfig.api,
+          apiKey: ""
+        }
+      })
+    ).rejects.toThrow(
+      'Failed to load local embedding model "local-embedding-test". Set matching.api.apiKey/EMBEDDING_API_KEY'
+    );
+  });
 });

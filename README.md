@@ -13,16 +13,6 @@ You can enable either path or both. When both are enabled, the app merges them i
 
 ### 1. Create Referenced Secrets
 
-Use GitHub repository secrets for sensitive values. Inside `APP_CONFIG`, reference them with `${oc.env:NAME}` instead of pasting the secret directly into the JSON.
-
-Example secret-backed fields:
-
-- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
-- `"userId": "${oc.env:ZOTERO_ID}"`
-- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
-
-Fields not shown with `${oc.env:...}` can stay as plain values in `APP_CONFIG`.
-
 Create these secrets as needed:
 
 | Key | Required When |
@@ -41,7 +31,14 @@ Create these secrets as needed:
 
 ### 2. Create `APP_CONFIG`
 
-Create one repository secret named `APP_CONFIG`. This is the canonical JSON config for interests, feeds, matching, summary, delivery, and runtime behavior.
+Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets for sensitive values. 
+
+Example secret-backed fields:
+
+- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
+- `"userId": "${oc.env:ZOTERO_ID}"`
+- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
+
 
 Minimal profile-first `APP_CONFIG`:
 
@@ -52,8 +49,8 @@ Minimal profile-first `APP_CONFIG`:
       "enabled": true,
       "summary": "Urban mobility, transport equity, and climate adaptation.",
       "topics": ["urban mobility", "transport equity", "climate adaptation"],
-      "methods": ["GIS", "causal inference"],
-      "favoriteJournals": ["Nature Cities"],
+      "methods": ["deep learning"],
+      "favoriteJournals": ["Nature"],
       "avoidTopics": ["protein folding"],
       "referencePapers": [
         {
@@ -74,76 +71,6 @@ Minimal profile-first `APP_CONFIG`:
         "rss": "https://example.test/feed.xml"
       }
     ]
-  },
-  "runtime": {
-    "debug": false,
-    "sendEmpty": false
-  }
-}
-```
-
-Full example with API matching, optional summaries, and SMTP delivery:
-
-```json
-{
-  "interests": {
-    "profile": {
-      "enabled": true,
-      "summary": "Urban mobility, transport equity, and climate adaptation.",
-      "topics": ["urban mobility", "transport equity", "climate adaptation"],
-      "methods": ["GIS", "causal inference"],
-      "favoriteJournals": ["Nature Cities"],
-      "avoidTopics": ["protein folding"],
-      "referencePapers": [
-        {
-          "title": "Transit accessibility and climate resilience",
-          "abstract": "Public transit accessibility, climate adaptation, and cities."
-        }
-      ]
-    },
-    "zotero": {
-      "enabled": false
-    }
-  },
-  "feeds": {
-    "catalogSelections": ["Nature", "Science", "Nature Cities"],
-    "customRss": [
-      {
-        "name": "Example Lab Feed",
-        "rss": "https://example.test/feed.xml"
-      }
-    ]
-  },
-  "matching": {
-    "provider": "api",
-    "api": {
-      "baseUrl": "${oc.env:EMBEDDING_BASE_URL}",
-      "model": "text-embedding-3-small",
-      "apiKey": "${oc.env:EMBEDDING_API_KEY}",
-      "batchSize": 32
-    },
-    "local": {
-      "model": "Xenova/all-MiniLM-L6-v2",
-      "batchSize": 16
-    },
-    "paperLimit": 10,
-    "maxPaperAgeDays": 7
-  },
-  "summary": {
-    "enabled": false,
-    "baseUrl": "${oc.env:OPENAI_BASE_URL}",
-    "model": "gpt-4o-mini",
-    "apiKey": "${oc.env:OPENAI_API_KEY}",
-    "language": "English",
-    "maxTokens": 1024
-  },
-  "delivery": {
-    "mode": "smtp",
-    "from": "${oc.env:SENDER}",
-    "to": "${oc.env:RECEIVER}",
-    "smtpHost": "${oc.env:SMTP_SERVER}",
-    "smtpPort": "${oc.env:SMTP_PORT}",
-    "smtpPassword": "${oc.env:SENDER_PASSWORD}"
   },
   "runtime": {
     "debug": false,
@@ -176,28 +103,23 @@ Zotero-first `APP_CONFIG`:
 }
 ```
 
+Full config refers to [`config/app.example.json`](./config/app.example.json) for all available options.
+
 ### 3. Validate the Config
 
-After creating the referenced secrets and `APP_CONFIG`, run:
+After creating the referenced secrets and `APP_CONFIG` variable, run `test` on Github Actions for validation.
+
+## Local Run
 
 ```bash
+npm install
+cp .env.example .env.local
+cp config/app.example.json config/app.json
 npm run test:config
+npm run preview-email
 ```
 
-`APP_CONFIG` is also stored as a secret because GitHub Actions prints non-secret env values in logs.
-
-## Matching
-
-The matcher uses an OpenAI-compatible embeddings API first when `matching.provider` is `api` and the configured API key exists. If the API key is missing, it falls back to the configured local Hugging Face model.
-
-The default local model is selected for practical GitHub Actions runtime rather than maximum benchmark quality.
-
-## Feeds
-
-The app supports bundled catalog feeds and direct RSS feeds.
-
-- `feeds.catalogSelections`: names or abbreviations from `data/journals.config.ts`; empty means all bundled feeds.
-- `feeds.customRss`: direct RSS entries with `name` and `rss`.
+For local development, keep non-secret app settings in `config/app.json` and secrets in `.env.local`. `${oc.env:NAME}` references are resolved when the config loads, so the same config shape works locally and in GitHub Actions. `APP_CONFIG` is still supported for GitHub repository variables.
 
 ## CLI
 
@@ -215,16 +137,17 @@ Modes:
 - `setup-profile`: print a starter profile JSON fragment.
 - `test-config`: validate that `APP_CONFIG` or `config/app.json` can load.
 
-## Local Run
+## Matching
 
-```bash
-npm install
-cp .env.example .env.local
-npm run test:config
-npm run preview-email
-```
+The matcher uses an OpenAI-compatible embeddings API first when `matching.provider` is `api` and the configured API key exists. If the API key is missing, it falls back to the configured local Hugging Face model.
 
-For local development, you can set `APP_CONFIG` in `.env.local` or create `config/app.json`. `${oc.env:NAME}` references are resolved when the config loads, so the same config shape works locally and in GitHub Actions.
+## Feeds
+
+The app supports bundled catalog feeds and direct RSS feeds.
+
+- `feeds.catalogSelections`: names or abbreviations from `data/journals.config.ts`; empty means all bundled feeds.
+- `feeds.customRss`: direct RSS entries with `name` and `rss`.
+
 
 ## Workflows
 

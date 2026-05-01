@@ -45,7 +45,9 @@ function describeDelivery(result: unknown): string {
 }
 
 async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config">, env: Env): Promise<void> {
+  console.log("Loading app config...");
   const config = loadAppConfig(env);
+  console.log("Loaded app config.");
 
   console.log("Building interest corpus...");
   const interestCorpus = await buildInterestCorpus(config.interests, env);
@@ -60,17 +62,29 @@ async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config
   const recentPapers = filterRecentPapers(allFeedPapers, config.matching.maxPaperAgeDays);
   console.log(`Fetched ${allFeedPapers.length} RSS papers; ${recentPapers.length} are recent.`);
 
+  const matchingProvider =
+    config.matching.provider === "api" && config.matching.api.apiKey.trim() ? "API embeddings" : "local embeddings";
+  console.log(
+    `Ranking ${recentPapers.length} papers against ${interestCorpus.length} interest documents with ${matchingProvider}...`
+  );
   let ranked = await rankPapers(config.matching, recentPapers, interestCorpus, env);
+  console.log(`Ranked ${ranked.length} recommended papers.`);
   if (ranked.length === 0 && !config.runtime.sendEmpty && mode === "run") {
     console.log("No recommended papers above threshold. Skipping email.");
     return;
   }
 
   if (config.summary.enabled && config.summary.apiKey.trim() && ranked.length > 0) {
+    console.log(`Generating TLDR summaries for ${ranked.length} papers...`);
     ranked = await summarizeRecommendedPapers(ranked, createOpenAISummarizer(config.summary, env));
+    console.log("Generated TLDR summaries.");
+  } else {
+    console.log("Skipping TLDR summaries.");
   }
 
+  console.log("Rendering email HTML...");
   const html = renderEmail(ranked);
+  console.log("Rendered email HTML.");
   if (mode === "preview-email" || config.runtime.debug) {
     if (config.runtime.debug && mode === "run") {
       console.log(`Debug mode enabled. Skipping email send for ${ranked.length} recommendations.`);

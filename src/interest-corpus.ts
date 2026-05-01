@@ -12,9 +12,15 @@ export async function buildInterestCorpus(
   ) => Promise<InterestDocument[]> = fetchZoteroInterestDocuments
 ): Promise<InterestDocument[]> {
   const documents = buildProfileInterestDocuments(interests.profile);
+  console.log(`Built ${documents.length} profile interest documents.`);
 
   if (interests.zotero.enabled) {
-    documents.push(...(await fetchZoteroDocuments(interests.zotero, env)));
+    console.log("Fetching Zotero interest documents...");
+    const zoteroDocuments = await fetchZoteroDocuments(interests.zotero, env);
+    console.log(`Fetched ${zoteroDocuments.length} Zotero interest documents.`);
+    documents.push(...zoteroDocuments);
+  } else {
+    console.log("Skipping Zotero interest documents.");
   }
 
   return documents;

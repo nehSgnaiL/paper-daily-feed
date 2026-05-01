@@ -61,13 +61,22 @@ export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPape
 }
 
 export async function fetchJournalFeeds(journals: FetchableFeed[]): Promise<FeedPaper[]> {
-  const results = await Promise.allSettled(journals.map((journal) => fetchJournalFeed(journal)));
+  const results = await Promise.allSettled(
+    journals.map(async (journal, index) => {
+      const label = feedLabel(journal);
+      console.log(`Fetching RSS feed ${index + 1}/${journals.length}: ${label}`);
+      const papers = await fetchJournalFeed(journal);
+      console.log(`Fetched RSS feed ${index + 1}/${journals.length}: ${label} (${papers.length} papers)`);
+      return papers;
+    })
+  );
   return results.flatMap((result, index) => {
     if (result.status === "fulfilled") {
       return result.value;
     }
 
-    console.warn(`Failed to fetch ${journals[index]?.name}: ${String(result.reason)}`);
+    const journal = journals[index];
+    console.warn(`Failed to fetch ${journal ? feedLabel(journal) : "unknown feed"}: ${String(result.reason)}`);
     return [];
   });
 }

@@ -9,3 +9,4 @@ dist/
 .worktrees/
 skills-lock.json
 config/custom.yaml
+config/app.json

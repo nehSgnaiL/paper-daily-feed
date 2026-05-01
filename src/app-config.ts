@@ -87,6 +87,41 @@ type UnknownRecord = Record<string, unknown>;
 
 const ENV_REFERENCE = /^\$\{oc\.env:([A-Z0-9_]+)\}$/;
 
+function stripHashComments(configText: string): string {
+  return configText
+    .split("\n")
+    .map((line) => {
+      let inLineString = false;
+      let lineEscaped = false;
+
+      for (let index = 0; index < line.length; index += 1) {
+        const char = line[index];
+
+        if (lineEscaped) {
+          lineEscaped = false;
+          continue;
+        }
+
+        if (char === "\\" && inLineString) {
+          lineEscaped = true;
+          continue;
+        }
+
+        if (char === "\"") {
+          inLineString = !inLineString;
+          continue;
+        }
+
+        if (char === "#" && !inLineString) {
+          return line.slice(0, index);
+        }
+      }
+
+      return line;
+    })
+    .join("\n");
+}
+
 function asRecord(value: unknown): UnknownRecord {
   return value && typeof value === "object" && !Array.isArray(value) ? (value as UnknownRecord) : {};
 }
@@ -180,7 +215,7 @@ function asProvider(value: unknown): "api" | "local" {
 
 function parseAppConfigJson(configText: string): UnknownRecord {
   try {
-    return asRecord(JSON.parse(configText));
+    return asRecord(JSON.parse(stripHashComments(configText)));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
     throw new Error(`Invalid app config JSON: ${message}`);

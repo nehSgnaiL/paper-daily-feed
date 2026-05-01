@@ -1,4 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
+import { parse as parseDotenv } from "dotenv";
 import { afterEach, describe, expect, it } from "vitest";
 import { loadAppConfig } from "../src/app-config.js";
 
@@ -12,6 +13,12 @@ function json(value: unknown): string {
 function writeAppConfigFile(value: unknown): void {
   mkdirSync("config", { recursive: true });
   writeFileSync(appConfigPath, json(value));
+}
+
+function removeAppConfigFile(): void {
+  if (existsSync(appConfigPath)) {
+    unlinkSync(appConfigPath);
+  }
 }
 
 afterEach(() => {
@@ -71,6 +78,69 @@ describe("loadAppConfig", () => {
     });
     expect(config.matching.paperLimit).toBe(3);
     expect(config.summary.apiKey).toBe("resolved-summary-key");
+  });
+
+  it("loads APP_CONFIG with hash comments outside strings", () => {
+    const config = loadAppConfig(
+      {},
+      `{
+        # top-level comment
+        "interests": {
+          "profile": {
+            "enabled": true, # enable manual profile
+            "summary": "urban # mobility"
+          }
+        },
+        "feeds": {
+          "customRss": [
+            {
+              "name": "Feed",
+              "rss": "https://example.test/rss.xml#latest"
+            }
+          ]
+        },
+        "matching": {
+          "paperLimit": 4
+        }
+      }`
+    );
+
+    expect(config.interests.profile.enabled).toBe(true);
+    expect(config.interests.profile.summary).toBe("urban # mobility");
+    expect(config.feeds.customRss).toEqual([{ name: "Feed", rss: "https://example.test/rss.xml#latest" }]);
+    expect(config.matching.paperLimit).toBe(4);
+  });
+
+  it("keeps .env.example focused on environment variables", () => {
+    const parsedEnv = parseDotenv(readFileSync(".env.example"));
+
+    expect(parsedEnv.APP_CONFIG).toBeUndefined();
+    expect(parsedEnv.OPENAI_BASE_URL).toBe("https://api.openai.com/v1");
+    expect(parsedEnv.EMBEDDING_BASE_URL).toBe("https://api.openai.com/v1");
+  });
+
+  it("keeps config/app.example.json parseable as app config", () => {
+    const configText = readFileSync("config/app.example.json", "utf8");
+    const config = loadAppConfig(
+      {
+        ZOTERO_ID: "1234567",
+        ZOTERO_KEY: "example-zotero-api-key",
+        EMBEDDING_BASE_URL: "https://api.openai.com/v1",
+        EMBEDDING_API_KEY: "",
+        OPENAI_BASE_URL: "https://api.openai.com/v1",
+        OPENAI_API_KEY: "",
+        SENDER: "sender@example.com",
+        RECEIVER: "receiver@example.com",
+        SMTP_SERVER: "smtp.example.com",
+        SMTP_PORT: "465",
+        SENDER_PASSWORD: "example-smtp-app-password"
+      },
+      configText
+    );
+
+    expect(config.interests.profile.enabled).toBe(true);
+    expect(config.feeds.catalogSelections).toContain("Nature");
+    expect(config.runtime.debug).toBe(true);
   });
 
   it("prefers explicit JSON text over APP_CONFIG and file fallback", () => {
@@ -166,6 +236,8 @@ describe("loadAppConfig", () => {
   });
 
   it("requires APP_CONFIG or config/app.json", () => {
+    removeAppConfigFile();
+
     expect(() => loadAppConfig({})).toThrow(
       "Missing app config. Set APP_CONFIG or provide a local config file."
     );

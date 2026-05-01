@@ -741,14 +741,14 @@ git commit -m "feat: add explicit cli modes"
 ```md
 - README documents both profile and Zotero setup as equal first-class paths.
 - Workflow examples read `APP_CONFIG` rather than writing `CUSTOM_CONFIG` YAML.
-- `APP_CONFIG` is stored as a secret because Actions logs can expose non-secret environment values.
+- `APP_CONFIG` is stored as a repository variable; sensitive values stay in secrets and are referenced from config.
 ```
 
 - [ ] **Step 2: Update the workflow environment model**
 
 ```yaml
 env:
-  APP_CONFIG: ${{ secrets.APP_CONFIG }}
+  APP_CONFIG: ${{ vars.APP_CONFIG }}
   OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
   EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
   ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}

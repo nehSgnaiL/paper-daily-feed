@@ -108,10 +108,18 @@ export async function createOpenAICompatibleEmbedder(
 }
 
 export async function createLocalEmbedder(config: MatchingConfig["local"]): Promise<EmbedTexts> {
-  const { pipeline } = await import("@huggingface/transformers");
-  const extractor = await pipeline("feature-extraction", config.model, {
-    dtype: "fp32"
-  });
+  let extractor: Awaited<ReturnType<typeof import("@huggingface/transformers").pipeline>>;
+  try {
+    const { pipeline } = await import("@huggingface/transformers");
+    extractor = await pipeline("feature-extraction", config.model, {
+      dtype: "fp32"
+    });
+  } catch (error) {
+    const message = error instanceof Error ? error.message : String(error);
+    throw new Error(
+      `Failed to load local embedding model "${config.model}". Set matching.api.apiKey/EMBEDDING_API_KEY for API embeddings, or make sure the local model is already cached or reachable from Hugging Face. Cause: ${message}`
+    );
+  }
 
   return async (texts: string[]) => {
     const batchSize = batchSizeOrDefault(config.batchSize, 16);

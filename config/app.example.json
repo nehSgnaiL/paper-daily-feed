@@ -1,0 +1,65 @@
+{
+  "interests": {
+    "profile": {
+      "enabled": true,
+      "summary": "Urban mobility, transport equity, and climate adaptation.",
+      "topics": ["urban mobility", "transport equity"],
+      "methods": ["deep learning"],
+      "favoriteJournals": ["Nature Cities"],
+      "avoidTopics": ["protein folding"],
+      "referencePapers": [
+        {
+          "title": "Transit accessibility and climate resilience",
+          "abstract": "Public transit accessibility, climate adaptation, and cities."
+        }
+      ]
+    },
+    "zotero": {
+      "enabled": false,
+      "userId": "${oc.env:ZOTERO_ID}",
+      "apiKey": "${oc.env:ZOTERO_KEY}",
+      "libraryType": "user",
+      "includeCollections": ["2026/survey/**"],
+      "excludeCollections": ["archive/**"]
+    }
+  },
+  "feeds": {
+    "catalogSelections": ["Nature", "Science", "Nature Cities"],
+    "customRss": []
+  },
+  "matching": {
+    "provider": "api",
+    "api": {
+      "baseUrl": "${oc.env:EMBEDDING_BASE_URL}",
+      "model": "text-embedding-3-small",
+      "apiKey": "${oc.env:EMBEDDING_API_KEY}",
+      "batchSize": 32
+    },
+    "local": {
+      "model": "Xenova/all-MiniLM-L6-v2",
+      "batchSize": 16
+    },
+    "paperLimit": 10,
+    "maxPaperAgeDays": 7
+  },
+  "summary": {
+    "enabled": false,
+    "baseUrl": "${oc.env:OPENAI_BASE_URL}",
+    "model": "gpt-4o-mini",
+    "apiKey": "${oc.env:OPENAI_API_KEY}",
+    "language": "English",
+    "maxTokens": 1024
+  },
+  "delivery": {
+    "mode": "smtp",
+    "from": "${oc.env:SENDER}",
+    "to": "${oc.env:RECEIVER}",
+    "smtpHost": "${oc.env:SMTP_SERVER}",
+    "smtpPort": "${oc.env:SMTP_PORT}",
+    "smtpPassword": "${oc.env:SENDER_PASSWORD}"
+  },
+  "runtime": {
+    "debug": true,
+    "sendEmpty": true
+  }
+}
