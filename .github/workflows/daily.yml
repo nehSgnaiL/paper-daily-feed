@@ -35,8 +35,11 @@ jobs:
       - name: Run recommendation feed
         env:
           APP_CONFIG: ${{ vars.APP_CONFIG }}
+          ZOTERO_ID: ${{ secrets.ZOTERO_ID }}
           ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          EMBEDDING_BASE_URL: ${{ vars.EMBEDDING_BASE_URL }}
           EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
           SENDER: ${{ secrets.SENDER }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
