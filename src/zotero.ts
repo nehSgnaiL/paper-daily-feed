@@ -1,4 +1,5 @@
 import type { ZoteroInterestConfig } from "./app-config.js";
+import { createProgress } from "./progress.js";
 import type { CorpusPaper, InterestDocument } from "./types.js";
 
 export type ZoteroItem = {
@@ -120,15 +121,18 @@ async function fetchZoteroPage(config: ZoteroLibraryConfig, resource: string, st
 async function fetchAllZoteroPages<T>(config: ZoteroLibraryConfig, resource: string): Promise<T[]> {
   const allItems: T[] = [];
   const pageSize = 100;
+  const progress = createProgress(`Zotero ${resource}`);
 
   for (let start = 0; ; start += pageSize) {
     const items = (await fetchZoteroPage(config, resource, start)) as T[];
     allItems.push(...items);
+    progress.step(`page ${start / pageSize + 1}: ${items.length} items, ${allItems.length} total`);
     if (items.length < pageSize) {
       break;
     }
   }
 
+  progress.done(`${allItems.length} total items`);
   return allItems;
 }
 

@@ -1,4 +1,5 @@
 import Parser from "rss-parser";
+import { createProgress } from "./progress.js";
 import type { FeedPaper, FeedSource, Journal } from "./types.js";
 import { stripHtml } from "./text.js";
 
@@ -61,12 +62,13 @@ export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPape
 }
 
 export async function fetchJournalFeeds(journals: FetchableFeed[]): Promise<FeedPaper[]> {
+  const progress = createProgress("RSS", { total: journals.length });
   const results = await Promise.allSettled(
     journals.map(async (journal, index) => {
       const label = feedLabel(journal);
-      console.log(`Fetching RSS feed ${index + 1}/${journals.length}: ${label}`);
+      console.log(`[RSS] start ${index + 1}/${journals.length}: ${label}`);
       const papers = await fetchJournalFeed(journal);
-      console.log(`Fetched RSS feed ${index + 1}/${journals.length}: ${label} (${papers.length} papers)`);
+      progress.step(`${label}: ${papers.length} papers`);
       return papers;
     })
   );
@@ -76,7 +78,7 @@ export async function fetchJournalFeeds(journals: FetchableFeed[]): Promise<Feed
     }
 
     const journal = journals[index];
-    console.warn(`Failed to fetch ${journal ? feedLabel(journal) : "unknown feed"}: ${String(result.reason)}`);
+    progress.step(`${journal ? feedLabel(journal) : "unknown feed"} failed: ${String(result.reason)}`);
     return [];
   });
 }
