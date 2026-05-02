@@ -1,6 +1,6 @@
 # paper-daily-feed
 
-Recommend journal papers based on your research interests and/or Zotero reading.
+> The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, this repository curates a daily recommendation & summary tailored exactly to your vibe.
 
 The recommendation can be produced via two sources (enable either one or both):
 
