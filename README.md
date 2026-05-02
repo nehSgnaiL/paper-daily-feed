@@ -1,46 +1,45 @@
 # paper-daily-feed
 
-Daily paper recommendations from journal RSS feeds, ranked against your research interests and delivered as an email digest.
+Recommend journal papers based on your research interests and/or Zotero reading.
 
-The app has two equal interest-source paths:
+The recommendation can be produced via two sources (enable either one or both):
 
 - Interest profile: describe your research area directly in config.
-- Zotero: use papers and abstracts from a Zotero library.
+- Zotero library: use papers and abstracts in Zotero library.
 
-You can enable either path or both. When both are enabled, the app merges them into one interest corpus before matching papers.
 
 ## GitHub Setup
 
-### 1. Create Referenced Secrets
+### 1. Create Secrets in GitHub Repository Settings
+
+> Go to your GitHub repository -> Settings -> Secrets and variables -> Actions.
 
 Create these secrets as needed:
 
-| Key | Required When |
-| --- | --- |
-| `SENDER` | sending email |
-| `SENDER_PASSWORD` | sending email |
-| `RECEIVER` | sending email |
-| `SMTP_SERVER` | sending email |
-| `SMTP_PORT` | sending email |
-| `OPENAI_BASE_URL` | using summary generation API via a secret-backed URL |
-| `EMBEDDING_BASE_URL` | using embeddings API via a secret-backed URL |
-| `EMBEDDING_API_KEY` | using API embeddings |
-| `OPENAI_API_KEY` | generating TLDR summaries |
-| `ZOTERO_ID` | using Zotero interests via a secret-backed user or group id |
-| `ZOTERO_KEY` | using Zotero interests |
+| Function | Key | Description | Example |
+| --- | --- | --- | --- |
+| Email | `RECEIVER` | Email address that receives recommendations. Required when sending email. | `reader@example.com` |
+| Email | `SENDER` | Email account used by the SMTP server to send recommendations. | `digest@example.com` |
+| Email | `SENDER_PASSWORD` | Sender account password or SMTP authentication code. This may differ from the email login password. | `app-password-or-token` |
+| Email | `SMTP_SERVER` | SMTP server that sends the email. | `smtp.example.com` |
+| Email | `SMTP_PORT` | SMTP server port. | `465` |
+| LLM summary | `OPENAI_BASE_URL` | OpenAI-compatible LLM API, required when summarying paper. You can get FREE API for using open source LLMs (e.g., `Qwen/Qwen3-8B`) in [SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU). | `https://api.siliconflow.cn/v1` |
+| LLM summary | `OPENAI_API_KEY` | Summary generation API key. Required when generating TLDR summaries. | `sk-...` |
+| Zotero | `ZOTERO_ID` | Zotero user or group ID (not your username). Get it from [here](https://www.zotero.org/settings/security). Required when using Zotero Library. | `1234567` |
+| Zotero | `ZOTERO_KEY` | Zotero API key with read access. Get key from [here](https://www.zotero.org/settings/security). Required when using Zotero Library. | `zotero-api-key` |
+| Embeddings | `EMBEDDING_BASE_URL` | If this is not specified, the default local embedding model will be used. | `https://api.openai.com/v1` |
+| Embeddings | `EMBEDDING_API_KEY` | Embeddings API key. Required when using API embeddings. | `sk-...` |
 
 ### 2. Create `APP_CONFIG`
 
-Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets for sensitive values. 
-
-Example secret-backed fields:
+Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets for sensitive values.  Example of referring secret-backed fields:
 
 - `"apiKey": "${oc.env:OPENAI_API_KEY}"`
 - `"userId": "${oc.env:ZOTERO_ID}"`
 - `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
 
 
-Minimal profile-first `APP_CONFIG`:
+#### Minimal profile-first `APP_CONFIG`:
 
 ```json
 {
@@ -79,7 +78,7 @@ Minimal profile-first `APP_CONFIG`:
 }
 ```
 
-Zotero-first `APP_CONFIG`:
+#### Zotero-first `APP_CONFIG`:
 
 ```json
 {
@@ -107,7 +106,7 @@ Full config refers to [`config/app.example.json`](./config/app.example.json) for
 
 ### 3. Validate the Config
 
-After creating the referenced secrets and `APP_CONFIG` variable, run `test` on Github Actions for validation.
+After creating the referenced secrets and `APP_CONFIG` variable, run `Test paper feeds` on Github Actions for validation.
 
 ## Local Run
 
@@ -138,9 +137,6 @@ Modes:
 - `setup-profile`: print a starter profile JSON fragment.
 - `test-config`: validate that `APP_CONFIG` or `config/app.json` can load.
 
-## Matching
-
-The matcher uses an OpenAI-compatible embeddings API first when `matching.provider` is `api` and the configured API key exists. If the API key is missing, it falls back to the configured local Hugging Face model.
 
 ## Feeds
 
@@ -151,12 +147,6 @@ The app supports bundled catalog feeds and direct RSS feeds.
 
 Run `npm run test:feeds:live` to smoke-test the current bundled publisher feeds against live RSS. Default tests use fixtures and do not require network access.
 
-
-## Workflows
-
-- Daily digest: `.github/workflows/daily.yml`
-- Manual preview: `.github/workflows/test.yml`
-- CI: `.github/workflows/ci.yml`
 
 ## Reference
 
