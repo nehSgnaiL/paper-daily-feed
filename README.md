@@ -117,6 +117,7 @@ cp .env.example .env.local
 cp config/app.example.json config/app.json
 npm run test:config
 npm run preview-email
+npm run test:feeds:live
 ```
 
 For local development, keep non-secret app settings in `config/app.json` and secrets in `.env.local`. `${oc.env:NAME}` references are resolved when the config loads, so the same config shape works locally and in GitHub Actions. `APP_CONFIG` is still supported for GitHub repository variables.
@@ -147,6 +148,8 @@ The app supports bundled catalog feeds and direct RSS feeds.
 
 - `feeds.catalogSelections`: names or abbreviations from `data/journals.config.ts`; empty means all bundled feeds.
 - `feeds.customRss`: direct RSS entries with `name` and `rss`.
+
+Run `npm run test:feeds:live` to smoke-test the current bundled publisher feeds against live RSS. Default tests use fixtures and do not require network access.
 
 
 ## Workflows

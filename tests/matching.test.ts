@@ -9,8 +9,12 @@ import type { MatchingConfig } from "../src/app-config.js";
 import type { FeedSource, InterestDocument, MatchContext, RecommendedPaper } from "../src/types.js";
 
 const pipelineMock = vi.fn();
+const transformersEnvMock = {
+  remoteHost: "https://huggingface.co/"
+};
 
 vi.mock("@huggingface/transformers", () => ({
+  env: transformersEnvMock,
   pipeline: pipelineMock
 }));
 
@@ -226,6 +230,8 @@ describe("createEmbedder", () => {
   afterEach(() => {
     vi.restoreAllMocks();
     vi.unstubAllGlobals();
+    delete process.env.HF_ENDPOINT;
+    transformersEnvMock.remoteHost = "https://huggingface.co/";
     pipelineMock.mockReset();
   });
 
@@ -277,5 +283,19 @@ describe("createEmbedder", () => {
     ).rejects.toThrow(
       'Failed to load local embedding model "local-embedding-test". Set matching.api.apiKey/EMBEDDING_API_KEY'
     );
+  });
+
+  it("uses HF_ENDPOINT for local model downloads when configured", async () => {
+    process.env.HF_ENDPOINT = "https://hf-mirror.com";
+    const extractor = vi.fn(async () => ({ tolist: () => [[0.5, 0.5]] }));
+    pipelineMock.mockResolvedValue(extractor);
+
+    const embedTexts = await createEmbedder({
+      ...matchingConfig,
+      provider: "local"
+    });
+
+    await expect(embedTexts(["local text"])).resolves.toEqual([[0.5, 0.5]]);
+    expect(transformersEnvMock.remoteHost).toBe("https://hf-mirror.com/");
   });
 });

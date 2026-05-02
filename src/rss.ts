@@ -12,9 +12,33 @@ type ParserItem = {
   summary?: string;
   isoDate?: string;
   pubDate?: string;
+  date?: string;
+  creator?: string;
+  author?: string;
+  authors?: string | string[];
+  dcCreators?: string | string[];
+  dcDate?: string;
+  prismPublicationDate?: string;
+  prismCoverDate?: string;
+  affiliations?: string | string[];
+  dcAffiliations?: string | string[];
+  prismAffiliations?: string | string[];
 };
 
-const parser = new Parser();
+const parser = new Parser<object, ParserItem>({
+  customFields: {
+    item: [
+      ["author", "authors", { keepArray: true }],
+      ["dc:creator", "dcCreators", { keepArray: true }],
+      ["dc:date", "dcDate"],
+      ["prism:publicationDate", "prismPublicationDate"],
+      ["prism:coverDate", "prismCoverDate"],
+      ["affiliation", "affiliations", { keepArray: true }],
+      ["dc:affiliation", "dcAffiliations", { keepArray: true }],
+      ["prism:affiliation", "prismAffiliations", { keepArray: true }]
+    ]
+  }
+});
 const RSS_HEADERS = {
   Accept: "application/rss+xml, application/xml, text/xml, */*",
   "User-Agent": "paper-daily-feed/0.1 (+https://github.com/nehSgnaiL/paper-daily-feed)"
@@ -26,6 +50,49 @@ function feedLabel(feed: FetchableFeed): string {
   return "kind" in feed ? feed.name : (feed.abbr ?? feed.name);
 }
 
+function asStringArray(value: string | string[] | undefined): string[] {
+  if (value === undefined) {
+    return [];
+  }
+  return Array.isArray(value) ? value : [value];
+}
+
+function normalizeField(value: string): string {
+  return stripHtml(value).replace(/\s+/g, " ").trim();
+}
+
+function normalizeAuthors(item: ParserItem): string[] | undefined {
+  const candidates = [
+    ...asStringArray(item.dcCreators),
+    ...asStringArray(item.authors),
+    ...asStringArray(item.creator),
+    ...asStringArray(item.author)
+  ];
+  const authors = candidates
+    .flatMap((value) => normalizeField(value).replace(/^by\s+/i, "").split(/\s*(?:;|\|)\s*/))
+    .map((value) => value.trim())
+    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+
+  return authors.length > 0 ? authors : undefined;
+}
+
+function normalizeFirstAffiliation(item: ParserItem): string | undefined {
+  const candidates = [
+    ...asStringArray(item.affiliations),
+    ...asStringArray(item.dcAffiliations),
+    ...asStringArray(item.prismAffiliations)
+  ];
+  const firstAffiliation = candidates.map(normalizeField).find((value) => value.length > 0);
+  return firstAffiliation || undefined;
+}
+
+function normalizeDate(item: ParserItem): Date | null {
+  const rawDate =
+    item.isoDate ?? item.pubDate ?? item.date ?? item.dcDate ?? item.prismPublicationDate ?? item.prismCoverDate;
+  const publishedAt = rawDate ? new Date(rawDate) : null;
+  return publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null;
+}
+
 export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper | null {
   const title = stripHtml(item.title ?? "");
   const url = (item.link ?? item.guid ?? "").trim();
@@ -34,15 +101,17 @@ export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper 
     return null;
   }
 
-  const rawDate = item.isoDate ?? item.pubDate;
-  const publishedAt = rawDate ? new Date(rawDate) : null;
+  const authors = normalizeAuthors(item);
+  const firstAffiliation = normalizeFirstAffiliation(item);
 
   return {
     journal,
     title,
     abstract: stripHtml(item.contentSnippet ?? item.summary ?? item.content ?? ""),
     url,
-    publishedAt: publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null
+    publishedAt: normalizeDate(item),
+    ...(authors ? { authors } : {}),
+    ...(firstAffiliation ? { firstAffiliation } : {})
   };
 }
 

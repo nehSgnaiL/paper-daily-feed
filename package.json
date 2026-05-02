@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "test": "vitest run",
+    "test:feeds:live": "PAPER_FEED_LIVE=1 vitest run tests/feed-live.test.ts",
     "start": "tsx src/index.ts",
     "preview-email": "tsx src/index.ts preview-email",
     "setup-profile": "tsx src/index.ts setup-profile",

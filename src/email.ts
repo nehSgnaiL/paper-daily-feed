@@ -19,7 +19,7 @@ function escapeHtml(value: string): string {
 
 function formatDate(value: Date | null): string {
   if (!value) {
-    return "Unknown date";
+    return "";
   }
   return value.toISOString().slice(0, 10);
 }
@@ -33,61 +33,67 @@ function truncateText(value: string, maxLength: number): string {
   return `${normalized.slice(0, maxLength).trimEnd()}...`;
 }
 
-function renderMatchLine(paper: RenderablePaper): string {
-  if (!paper.matchContext) {
-    return "";
-  }
-
-  if (paper.matchContext.bestMatchTitle) {
-    return `<p style="margin: 12px 0 0; color: #6f4f1f; font-size: 13px; line-height: 1.45;"><strong style="color: #4f3514;">Matched your interests:</strong> ${escapeHtml(
-      paper.matchContext.bestMatchTitle
-    )}</p>`;
-  }
-
-  if (paper.matchContext.bestMatchTopics.length > 0) {
-    return `<p style="margin: 12px 0 0; color: #6f4f1f; font-size: 13px; line-height: 1.45;"><strong style="color: #4f3514;">Matched your interests:</strong> ${escapeHtml(
-      paper.matchContext.bestMatchTopics.join(", ")
-    )}</p>`;
-  }
-
-  return "";
-}
-
 function renderSummary(paper: RenderablePaper): string {
   if (paper.tldr?.trim()) {
-    return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">TLDR:</strong> ${escapeHtml(
+    return `<p style="margin: 16px 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">TLDR:</strong> ${escapeHtml(
       paper.tldr.trim()
     )}</p>`;
   }
 
   if (paper.abstract.trim()) {
-    return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">Abstract excerpt:</strong> ${escapeHtml(
+    return `<p style="margin: 16px 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">Abstract excerpt:</strong> ${escapeHtml(
       truncateText(paper.abstract, ABSTRACT_EXCERPT_LIMIT)
     )}</p>`;
   }
 
-  return `<p style="margin: 14px 0 0; color: #334155; font-size: 14px; line-height: 1.6;"><strong style="color: #111827;">Abstract excerpt:</strong> No abstract provided.</p>`;
+  return `<p style="margin: 16px 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">Abstract excerpt:</strong> No abstract provided.</p>`;
+}
+
+function renderMetaLine(paper: RenderablePaper): string {
+  const date = formatDate(paper.publishedAt);
+  const values = [paper.journal, date].filter((value) => value.trim().length > 0);
+  return `<p style="margin: 0 0 8px; color: #007aff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${escapeHtml(
+    values.join(" · ")
+  )}</p>`;
+}
+
+function renderAuthors(paper: RenderablePaper): string {
+  if (!paper.authors || paper.authors.length === 0) {
+    return "";
+  }
+
+  return `<p style="margin: 0 0 8px; color: #424245; font-size: 14px; line-height: 1.45;">${escapeHtml(
+    paper.authors.join(", ")
+  )}</p>`;
+}
+
+function renderAffiliation(paper: RenderablePaper): string {
+  if (!paper.firstAffiliation?.trim()) {
+    return "";
+  }
+
+  return `<p style="margin: 0 0 14px; color: #6e6e73; font-size: 13px; line-height: 1.45;">${escapeHtml(
+    paper.firstAffiliation.trim()
+  )}</p>`;
 }
 
 function renderPaper(paper: RenderablePaper): string {
   const score = `${(paper.score * 100).toFixed(1)}%`;
-  const matchLine = renderMatchLine(paper);
   const summary = renderSummary(paper);
+  const authors = renderAuthors(paper);
+  const affiliation = renderAffiliation(paper);
 
   return `
-          <article style="background: #ffffff; border: 1px solid #e6dfd3; border-radius: 18px; padding: 24px; margin: 0 0 18px; box-shadow: 0 1px 0 rgba(20, 16, 10, 0.04);">
-            <p style="margin: 0 0 8px; color: #7c6f64; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${escapeHtml(
-              paper.journal
-            )} · ${formatDate(
-        paper.publishedAt
-      )}</p>
-            <h2 style="font-family: Georgia, 'Times New Roman', serif; font-size: 24px; line-height: 1.24; margin: 0 0 14px; color: #1f2933;">
-              <a href="${escapeHtml(paper.url)}" style="color: #1f2933; text-decoration: none;">${escapeHtml(
+          <article style="background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; padding: 24px; margin: 0 0 18px; box-shadow: 0 8px 24px rgba(0, 122, 255, 0.08);">
+            ${renderMetaLine(paper)}
+            <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 24px; line-height: 1.24; margin: 0 0 12px; color: #1d1d1f; letter-spacing: 0;">
+              <a href="${escapeHtml(paper.url)}" style="color: #1d1d1f; text-decoration: none;">${escapeHtml(
                 paper.title
               )}</a>
             </h2>
-            <p style="display: inline-block; margin: 0; padding: 7px 11px; border-radius: 999px; background: #f5ead8; color: #5c3d12; font-size: 13px; font-weight: 700;">Recommendation score: ${score}</p>
-            ${matchLine}
+            ${authors}
+            ${affiliation}
+            <p style="display: inline-block; margin: 0; padding: 8px 13px; border-radius: 999px; background: #007aff; color: #ffffff; font-size: 13px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.24);">Recommendation score: ${score}</p>
             ${summary}
           </article>`;
 }
@@ -97,20 +103,23 @@ export function renderEmail(papers: RenderablePaper[]): string;
 export function renderEmail(papers: RenderablePaper[]): string {
   const content =
     papers.length === 0
-      ? `<div style="background: #ffffff; border: 1px solid #e6dfd3; border-radius: 18px; padding: 24px; color: #4b5563; font-size: 15px; line-height: 1.6;">No recommended papers today.</div>`
+      ? `<div style="background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; padding: 24px; color: #424245; font-size: 15px; line-height: 1.6; box-shadow: 0 8px 24px rgba(0, 122, 255, 0.08);">No recommended papers today.</div>`
       : papers.map(renderPaper).join("\n");
 
   return `<!doctype html>
 <html>
-  <body style="margin: 0; padding: 0; background: #f6f1e8;">
-    <div style="background: #f6f1e8; margin: 0; padding: 32px 16px; font-family: Arial, Helvetica, sans-serif; color: #1f2933;">
+  <body style="margin: 0; padding: 0; background: #e8f4ff;">
+    <div style="background: linear-gradient(135deg, #e8f4ff 0%, #ffffff 100%); margin: 0; padding: 34px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
       <main style="max-width: 680px; margin: 0 auto;">
-        <header style="padding: 8px 2px 24px; border-bottom: 1px solid #ded4c5; margin: 0 0 22px;">
-          <p style="margin: 0 0 8px; color: #9a6a21; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Research Bulletin</p>
-          <h1 style="font-family: Georgia, 'Times New Roman', serif; font-size: 34px; line-height: 1.12; margin: 0; color: #18212f;">Daily paper feeds</h1>
-          <p style="margin: 12px 0 0; color: #6b7280; font-size: 15px; line-height: 1.55;">A concise digest of papers aligned with your research interests.</p>
+        <header style="padding: 10px 2px 26px; margin: 0 0 22px; text-align: center;">
+          <p style="margin: 0 0 8px; color: #007aff; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Research Bulletin</p>
+          <h1 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 36px; line-height: 1.12; margin: 0; color: #007aff; letter-spacing: 0;">Daily paper feeds</h1>
+          <p style="margin: 12px auto 0; color: #6e6e73; font-size: 15px; line-height: 1.55; max-width: 520px;">A recommendation of papers based on your research interests.</p>
         </header>
         ${content}
+        <footer style="padding: 18px 2px 4px; text-align: center; color: #6e6e73; font-size: 13px; line-height: 1.6;">
+          <p style="margin: 0;">Built with <a href="https://github.com/nehSgnaiL/paper-daily-feed" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a>.</p>
+        </footer>
       </main>
     </div>
   </body>

@@ -11,7 +11,7 @@ vi.mock("nodemailer", () => ({
 }));
 
 describe("renderEmail", () => {
-  it("renders recommended papers with journal, score, link, match line, and abstract excerpt fallback", () => {
+  it("renders recommended papers with journal, score, link, authors, affiliation, and abstract excerpt fallback", () => {
     const papers: RecommendedPaper[] = [
       {
         journal: "Nature Cities",
@@ -20,6 +20,8 @@ describe("renderEmail", () => {
           "Public transit accessibility and climate resilience in neighborhoods. This abstract continues with enough detail to prove the renderer uses a compact excerpt rather than dumping the full source text into the bulletin.",
         url: "https://example.test/transit",
         publishedAt: new Date("2026-04-28T10:30:00.000Z"),
+        authors: ["Ada Lovelace", "Grace Hopper"],
+        firstAffiliation: "Example University",
         score: 0.456,
         matchContext: {
           bestMatchSource: "zotero",
@@ -33,19 +35,23 @@ describe("renderEmail", () => {
 
     expect(html).toContain("Transit accessibility improves climate resilience");
     expect(html).toContain("Nature Cities");
+    expect(html).toContain("2026-04-28");
+    expect(html).toContain("Ada Lovelace, Grace Hopper");
+    expect(html).toContain("Example University");
     expect(html).toContain("45.6%");
-    expect(html).toContain("Matched your interests");
-    expect(html).toContain("Urban mobility and climate adaptation");
+    expect(html).not.toContain("Matched your interests");
+    expect(html).not.toContain("Urban mobility and climate adaptation");
     expect(html).toContain("Abstract excerpt");
     expect(html).toContain("Public transit accessibility and climate resilience in neighborhoods.");
     expect(html).toContain("https://example.test/transit");
+    expect(html).toContain("https://github.com/nehSgnaiL/paper-daily-feed");
   });
 
   it("renders a no-paper message for an empty digest", () => {
     expect(renderEmail([])).toContain("No recommended papers today");
   });
 
-  it("renders matched topics when there is no best match title", () => {
+  it("hides unavailable metadata and omits match context", () => {
     const html = renderEmail([
       {
         journal: "Science",
@@ -62,8 +68,10 @@ describe("renderEmail", () => {
       }
     ]);
 
-    expect(html).toContain("Matched your interests");
-    expect(html).toContain("urban heat, shade equity");
+    expect(html).not.toContain("Matched your interests");
+    expect(html).not.toContain("urban heat, shade equity");
+    expect(html).not.toContain("Unknown date");
+    expect(html).not.toContain("Authors unavailable");
     expect(html).toContain("No abstract provided.");
   });
 });

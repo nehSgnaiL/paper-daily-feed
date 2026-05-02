@@ -110,7 +110,11 @@ export async function createOpenAICompatibleEmbedder(
 export async function createLocalEmbedder(config: MatchingConfig["local"]): Promise<EmbedTexts> {
   let extractor: Awaited<ReturnType<typeof import("@huggingface/transformers").pipeline>>;
   try {
-    const { pipeline } = await import("@huggingface/transformers");
+    const { env, pipeline } = await import("@huggingface/transformers");
+    const hfEndpoint = process.env.HF_ENDPOINT?.trim();
+    if (hfEndpoint) {
+      env.remoteHost = hfEndpoint.endsWith("/") ? hfEndpoint : `${hfEndpoint}/`;
+    }
     extractor = await pipeline("feature-extraction", config.model, {
       dtype: "fp32"
     });
