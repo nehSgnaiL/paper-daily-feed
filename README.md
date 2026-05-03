@@ -10,7 +10,9 @@ The recommendation can be produced via two sources (enable either one or both):
 
 ## GitHub Setup
 
-### 1. Create Secrets in GitHub Repository Settings
+### 1. Fork This Repository
+
+### 2. Create Secrets in GitHub Repository Settings
 
 > Go to your GitHub repository -> Settings -> Secrets and variables -> Actions.
 
@@ -30,7 +32,7 @@ Create these secrets as needed:
 | Embeddings | `EMBEDDING_BASE_URL` | If this is not specified, the default local embedding model will be used. | `https://api.openai.com/v1` |
 | Embeddings | `EMBEDDING_API_KEY` | Embeddings API key. Required when using API embeddings. | `sk-...` |
 
-### 2. Create `APP_CONFIG`
+### 3. Create `APP_CONFIG`
 
 Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets for sensitive values.  Example of referring secret-backed fields:
 
@@ -104,7 +106,7 @@ Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets
 
 Full config refers to [`config/app.example.json`](./config/app.example.json) for all available options.
 
-### 3. Validate the Config
+### 4. Validate the Config
 
 After creating the referenced secrets and `APP_CONFIG` variable, run `Test paper feeds` on Github Actions for validation.
 
