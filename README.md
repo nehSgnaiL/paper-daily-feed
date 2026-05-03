@@ -10,13 +10,15 @@ The recommendation can be produced via two sources (enable either one or both):
 
 ## GitHub Setup
 
-### 1. Fork This Repository
+### 1. Fork the Repository
 
-### 2. Create Secrets in GitHub Repository Settings
+- Go to: https://github.com/nehSgnaiL/paper-daily-feed
+- Click the **"Fork"** button in the top-right corner
+- Select your GitHub account as the destination
 
-> Go to your GitHub repository -> Settings -> Secrets and variables -> Actions.
+### 2. Create Repository Secrets
 
-Create these secrets as needed:
+Go to your GitHub repository -> Settings -> Secrets and variables -> Actions. Then create these secrets as needed:
 
 | Function | Key | Description | Example |
 | --- | --- | --- | --- |
@@ -32,16 +34,14 @@ Create these secrets as needed:
 | Embeddings | `EMBEDDING_BASE_URL` | If this is not specified, the default local embedding model will be used. | `https://api.openai.com/v1` |
 | Embeddings | `EMBEDDING_API_KEY` | Embeddings API key. Required when using API embeddings. | `sk-...` |
 
-### 3. Create `APP_CONFIG`
+### 3. Create Repository Variable `APP_CONFIG`
 
-Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets for sensitive values.  Example of referring secret-backed fields:
+In **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named `APP_CONFIG`.
 
-- `"apiKey": "${oc.env:OPENAI_API_KEY}"`
-- `"userId": "${oc.env:ZOTERO_ID}"`
-- `"smtpPassword": "${oc.env:SENDER_PASSWORD}"`
+> [!TIPS]
+> Use `${oc.env:SECRET_NAME}` syntax to reference secrets (e.g., `"apiKey": "${oc.env:OPENAI_API_KEY}"`)
 
-
-#### Minimal profile-first `APP_CONFIG`:
+#### Example: Profile-First Config:
 
 ```json
 {
@@ -80,7 +80,7 @@ Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets
 }
 ```
 
-#### Zotero-first `APP_CONFIG`:
+#### Example Zotero-First Config:
 
 ```json
 {
@@ -106,9 +106,11 @@ Create one repository variable named `APP_CONFIG`. Use GitHub repository secrets
 
 Full config refers to [`config/app.example.json`](./config/app.example.json) for all available options.
 
-### 4. Validate the Config
+### 4. Validation
 
-After creating the referenced secrets and `APP_CONFIG` variable, run `Test paper feeds` on Github Actions for validation.
+1. Go to **Actions** tab in your forked repo
+2. Run the workflow: **"Test paper feeds"**
+3. Check logs to confirm config loads correctly
 
 ## Local Run
 
