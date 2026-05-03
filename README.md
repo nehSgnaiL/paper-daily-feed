@@ -18,7 +18,7 @@ The recommendation can be produced via two sources (enable either one or both):
 
 ### 2. Create Repository Secrets
 
-Go to your GitHub repository -> Settings -> Secrets and variables -> Actions. Then create these secrets as needed:
+Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** → **Variables**. Then create these secrets as needed:
 
 | Function | Key | Description | Example |
 | --- | --- | --- | --- |
@@ -38,7 +38,7 @@ Go to your GitHub repository -> Settings -> Secrets and variables -> Actions. Th
 
 In **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named `APP_CONFIG`.
 
-> [!TIPS]
+> [!TIP]
 > Use `${oc.env:SECRET_NAME}` syntax to reference secrets (e.g., `"apiKey": "${oc.env:OPENAI_API_KEY}"`)
 
 #### Example: Profile-First Config:
