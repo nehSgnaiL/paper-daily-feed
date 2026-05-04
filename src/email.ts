@@ -118,7 +118,7 @@ export function renderEmail(papers: RenderablePaper[]): string {
         </header>
         ${content}
         <footer style="padding: 18px 2px 4px; text-align: center; color: #6e6e73; font-size: 13px; line-height: 1.6;">
-          <p style="margin: 0;">Built with <a href="https://github.com/nehSgnaiL/paper-daily-feed" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a>.</p>
+          <p style="margin: 0;">Built with <a href="https://github.com/nehSgnaiL/paper-daily-feed" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a> by <a href="https://nehsgnail.github.io/" style="color: #007aff; font-weight: 700; text-decoration: none;">nehSgnaiL</a>.</p>
         </footer>
       </main>
     </div>
