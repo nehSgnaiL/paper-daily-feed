@@ -83,7 +83,12 @@ const journals: Journal[] = [
   },
   {
     name: "Journal of Transport Geography",
+    abbr: "JTG",
     rss: "https://rss.sciencedirect.com/publication/science/09666923"
+  },
+  {
+    name: "Applied Geography",
+    rss: "https://rss.sciencedirect.com/publication/science/01436228"
   },
   {
     name: "IEEE Transactions on Intelligent Transportation Systems",
