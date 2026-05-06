@@ -61,6 +61,30 @@ function normalizeField(value: string): string {
   return stripHtml(value).replace(/\s+/g, " ").trim();
 }
 
+function itemText(item: ParserItem): string {
+  return normalizeField(item.contentSnippet ?? item.summary ?? item.content ?? "");
+}
+
+function isScienceDirectItem(item: ParserItem): boolean {
+  return [item.link, item.guid].some((value) => value?.toLowerCase().includes("sciencedirect.com"));
+}
+
+function parseScienceDirectAuthors(item: ParserItem): string[] {
+  if (!isScienceDirectItem(item)) {
+    return [];
+  }
+
+  const match = itemText(item).match(/(?:^|\n|\s)Author\(s\):\s*(.+?)(?=\s*(?:Publication date:|Source:|$))/i);
+  if (!match?.[1]) {
+    return [];
+  }
+
+  return match[1]
+    .split(/\s*,\s*/)
+    .map((value) => value.trim())
+    .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
+}
+
 function normalizeAuthors(item: ParserItem): string[] | undefined {
   const candidates = [
     ...asStringArray(item.dcCreators),
@@ -73,7 +97,8 @@ function normalizeAuthors(item: ParserItem): string[] | undefined {
     .map((value) => value.trim())
     .filter((value, index, values) => value.length > 0 && values.indexOf(value) === index);
 
-  return authors.length > 0 ? authors : undefined;
+  const fallbackAuthors = authors.length > 0 ? authors : parseScienceDirectAuthors(item);
+  return fallbackAuthors.length > 0 ? fallbackAuthors : undefined;
 }
 
 function normalizeFirstAffiliation(item: ParserItem): string | undefined {
@@ -90,7 +115,34 @@ function normalizeDate(item: ParserItem): Date | null {
   const rawDate =
     item.isoDate ?? item.pubDate ?? item.date ?? item.dcDate ?? item.prismPublicationDate ?? item.prismCoverDate;
   const publishedAt = rawDate ? new Date(rawDate) : null;
-  return publishedAt && !Number.isNaN(publishedAt.getTime()) ? publishedAt : null;
+  if (publishedAt && !Number.isNaN(publishedAt.getTime())) {
+    return publishedAt;
+  }
+
+  return parseScienceDirectPublicationDate(item);
+}
+
+function parseScienceDirectPublicationDate(item: ParserItem): Date | null {
+  if (!isScienceDirectItem(item)) {
+    return null;
+  }
+
+  const match = itemText(item).match(/(?:^|\n|\s)Publication date:\s*(.+?)(?=\s*(?:Source:|Author\(s\):|$))/i);
+  const value = match?.[1]?.trim();
+  if (!value) {
+    return null;
+  }
+
+  const monthYear = value.match(/^([A-Za-z]+)\s+(\d{4})$/);
+  if (monthYear?.[1] && monthYear[2]) {
+    const monthIndex = new Date(`${monthYear[1]} 1, 2000`).getMonth();
+    if (!Number.isNaN(monthIndex)) {
+      return new Date(Date.UTC(Number(monthYear[2]), monthIndex, 1));
+    }
+  }
+
+  const parsed = new Date(value);
+  return Number.isNaN(parsed.getTime()) ? null : parsed;
 }
 
 export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper | null {

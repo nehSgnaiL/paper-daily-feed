@@ -39,6 +39,20 @@ describe("normalizeFeedItem", () => {
     });
   });
 
+  it("parses ScienceDirect description fallback metadata", () => {
+    const paper = normalizeFeedItem("CEUS", {
+      title: "Urban housing markets under flood risk",
+      link: "https://www.sciencedirect.com/science/article/pii/S0198971526000426?dgcid=rss_sd_all",
+      contentSnippet:
+        "Publication date: September 2026\nSource: Computers, Environment and Urban Systems, Volume 128\nAuthor(s): Asli Mutlu, Tatiana Filatova"
+    });
+
+    expect(paper).toMatchObject({
+      authors: ["Asli Mutlu", "Tatiana Filatova"],
+      publishedAt: new Date("2026-09-01T00:00:00.000Z")
+    });
+  });
+
   it("returns null when an item has no usable URL or title", () => {
     expect(normalizeFeedItem("Nature", { title: "", link: "" })).toBeNull();
     expect(normalizeFeedItem("Nature", { title: "Valid title" })).toBeNull();
