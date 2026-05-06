@@ -47,68 +47,34 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 In **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named `APP_CONFIG`.
 
 > [!TIP]
-> - You can enable either one or two both sources for description your interests. Full config refers to [`config/app.example.json`](./config/app.example.json) for all available options.
-> - Use `${oc.env:SECRET_NAME}` syntax to reference secrets (e.g., `"apiKey": "${oc.env:OPENAI_API_KEY}"`)
+> - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-repository-secrets) will be read automatically.
+> - You can enable either one or both interest sources: Textual profile and Zotero.
+> - Below examples show minial configs for each source. You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
 
-#### Example: Profile-First Config:
+
+#### Example: Profile-First `APP_CONFIG`:
 
 ```json
 {
   "interests": {
     "profile": {
       "enabled": true,
-      "summary": "Urban mobility, transport equity, and climate adaptation.",
-      "topics": ["urban mobility", "transport equity", "climate adaptation"],
-      "methods": ["deep learning"],
-      "favoriteJournals": ["Nature"],
-      "avoidTopics": ["protein folding"],
-      "referencePapers": [
-        {
-          "title": "Transit accessibility and climate resilience",
-          "abstract": "Public transit accessibility, climate adaptation, and cities."
-        }
-      ]
-    },
-    "zotero": {
-      "enabled": false
+      "summary": "Urban mobility, transport equity, and climate adaptation."
     }
-  },
-  "feeds": {
-    "catalogSelections": ["Nature", "Science", "Nature Cities"],
-    "customRss": [
-      {
-        "name": "Example Lab Feed",
-        "rss": "https://example.test/feed.xml"
-      }
-    ]
-  },
-  "runtime": {
-    "debug": false,
-    "sendEmpty": false
   }
 }
 ```
 
-#### Example Zotero-First Config:
+#### Example: Zotero-First `APP_CONFIG`:
 
 ```json
 {
   "interests": {
-    "profile": {
-      "enabled": false
-    },
     "zotero": {
       "enabled": true,
-      "userId": "${oc.env:ZOTERO_ID}",
-      "apiKey": "${oc.env:ZOTERO_KEY}",
-      "libraryType": "user",
       "includeCollections": ["2026/survey/**"],
       "excludeCollections": ["archive/**"]
     }
-  },
-  "feeds": {
-    "catalogSelections": ["Nature", "Science"],
-    "customRss": []
   }
 }
 ```
@@ -125,7 +91,7 @@ In **Settings** → **Secrets and variables** → **Actions** → **Variables**,
 ```bash
 npm install
 cp .env.example .env.local
-cp config/app.example.json config/app.json
+cp config/app.example.jsonc config/app.json
 npm run test:config
 npm run preview-email
 npm run test:feeds:live
