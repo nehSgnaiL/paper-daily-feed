@@ -1,4 +1,7 @@
 # paper-daily-feed
+[![Last Update](https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&style=flat-square)](https://github.com/nehSgnaiL/paper-daily-feed)
+[![star](https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/stargazers)
+[![fork](https://img.shields.io/github/forks/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/network/members) 
 
 > The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, use this repository to curate a daily recommendation & summary tailored exactly to your vibe.
 
