@@ -45,6 +45,11 @@ describe("renderEmail", () => {
     expect(html).toContain("Public transit accessibility and climate resilience in neighborhoods.");
     expect(html).toContain("https://example.test/transit");
     expect(html).toContain("https://github.com/nehSgnaiL/paper-daily-feed");
+    expect(html).toContain('<table role="presentation" width="680"');
+    expect(html).toContain('align="center"');
+    expect(html).toContain("border: 1px solid #d9ebff");
+    expect(html).not.toContain("<article");
+    expect(html).not.toContain("<main");
   });
 
   it("renders a no-paper message for an empty digest", () => {
