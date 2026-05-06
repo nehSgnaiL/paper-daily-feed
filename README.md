@@ -1,10 +1,10 @@
 # paper-daily-feed
 
-> The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, this repository curates a daily recommendation & summary tailored exactly to your vibe.
+> The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, use this repository to curate a daily recommendation & summary tailored exactly to your vibe.
 
 The recommendation can be produced via two sources (enable either one or both):
 
-- Interest profile: describe your research area directly in config.
+- Interest profile: describe your research area directly in text.
 - Zotero library: use papers and abstracts in Zotero library.
 
 <p align="center">
@@ -47,7 +47,7 @@ In **Settings** → **Secrets and variables** → **Actions** → **Variables**,
 > [!TIP]
 > - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-repository-secrets) will be read automatically.
 > - You can enable either one or both interest sources: Textual profile and Zotero.
-> - Below examples show minial configs for each source. You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
+> - Below examples show minimal configs for each source. You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
 
 
 #### Example: Profile-First `APP_CONFIG`:
