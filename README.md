@@ -3,16 +3,11 @@
 > The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, this repository curates a daily recommendation & summary tailored exactly to your vibe.
 
 <p align="center">
-  <div style="max-width:600px;margin:auto;">
-    <article style="background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; padding: 24px; margin: 0 0 18px; box-shadow: 0 8px 24px rgba(0, 122, 255, 0.08);">
-      <p style="margin: 0 0 8px; color: #007aff; font-size: 10px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">Travel Behaviour and Society</p>
-      <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 20px; line-height: 1.24; margin: 0 0 12px; color: #1d1d1f; letter-spacing: 0;">
-        <a href="https://linkinghub.elsevier.com/retrieve/pii/S2214367X2500170X" style="color: #1d1d1f; text-decoration: none;">Predicting short-term urban bike sharing demand in a coupled continuous and network space</a>
-      </h2>
-      <p style="display: inline-block; margin: 0; padding: 8px 13px; border-radius: 999px; background: #007aff; color: #ffffff; font-size: 11px; font-weight: 700; box-shadow: 0 4px 12px rgba(0, 122, 255, 0.24);">Recommendation score: 62.0%</p>
-      <p style="margin: 16px 0 0; color: #424245; font-size: 12px; line-height: 1.6;"><strong style="color: #1d1d1f;">TLDR:</strong> This study proposes GeoTopo-Net, a framework that jointly models dependencies in continuous and network spaces to significantly improve the accuracy of short-term urban bike sharing demand prediction.</p>
-    </article>
-  </div>
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/email_render_example-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/email_render_example.svg" />
+    <img alt="paper-daily-feed" src="./docs/email_render_example.svg" width="600"/>
+  </picture>
 </p>
 
 

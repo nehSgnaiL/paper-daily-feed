@@ -1,0 +1,28 @@
+<svg width="760" height="250" viewBox="0 0 760 250" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject x="0" y="0" width="760" height="250">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="font-family:-apple-system,BlinkMacSystemFont,'SF Pro Display','Helvetica Neue',Arial,sans-serif;">
+      <article style="background:#0d1117;border:1px solid #1f6feb;border-radius:18px;padding:24px;margin:0 0 18px;box-shadow:0 8px 24px rgba(0,122,255,0.18);box-sizing:border-box;width:760px;">
+        
+        <p style="margin:0 0 8px;color:#007aff;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">
+          Travel Behaviour and Society
+        </p>
+
+        <h2 style="font-size:24px;line-height:1.24;margin:0 0 12px;color:#f0f6fc;letter-spacing:0;">
+          <a href="https://linkinghub.elsevier.com/retrieve/pii/S2214367X2500170X" style="color:#f0f6fc;text-decoration:none;">
+            Predicting short-term urban bike sharing demand in a coupled continuous and network space
+          </a>
+        </h2>
+
+        <p style="display:inline-block;margin:0;padding:8px 13px;border-radius:999px;background:#007aff;color:#ffffff;font-size:13px;font-weight:700;box-shadow:0 4px 12px rgba(0,122,255,0.32);">
+          Recommendation score: 62.0%
+        </p>
+
+        <p style="margin:16px 0 0;color:#c9d1d9;font-size:14px;line-height:1.6;">
+          <strong style="color:#ffffff;">TLDR:</strong>
+          This study proposes GeoTopo-Net, a framework that jointly models dependencies in continuous and network spaces to significantly improve the accuracy of short-term urban bike sharing demand prediction.
+        </p>
+
+      </article>
+    </div>
+  </foreignObject>
+</svg>
