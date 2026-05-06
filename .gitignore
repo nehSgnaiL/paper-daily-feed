@@ -8,6 +8,6 @@ dist/
 .agents/
 .worktrees/
 skills-lock.json
-docs/
+docs/superpower/
 config/custom.yaml
 config/app.json
