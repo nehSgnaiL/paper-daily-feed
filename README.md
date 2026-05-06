@@ -2,6 +2,11 @@
 
 > The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, this repository curates a daily recommendation & summary tailored exactly to your vibe.
 
+The recommendation can be produced via two sources (enable either one or both):
+
+- Interest profile: describe your research area directly in config.
+- Zotero library: use papers and abstracts in Zotero library.
+
 <p align="center">
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/email_render_example-dark.svg" />
@@ -9,13 +14,6 @@
     <img alt="paper-daily-feed" src="./docs/email_render_example.svg" width="600"/>
   </picture>
 </p>
-
-
-The recommendation can be produced via two sources (enable either one or both):
-
-- Interest profile: describe your research area directly in config.
-- Zotero library: use papers and abstracts in Zotero library.
-
 
 ## Get started
 
@@ -86,18 +84,20 @@ In **Settings** → **Secrets and variables** → **Actions** → **Variables**,
 3. Check logs to confirm config loads correctly
 4. If everything goes smoothly, you will :white_check_mark: see the test run successfully and :bell: receive daily paper recommendations starting tomorrow.
 
+The default schedule in [`.github/workflows/daily.yml`](./.github/workflows/daily.yml) is `0 1 * * *`, which is 09:00 at UTC+8. To change when the daily workflow runs, edit the workflow `cron` value directly.
+
 ## Local Run
 
 ```bash
 npm install
 cp .env.example .env.local
-cp config/app.example.jsonc config/app.json
+cp config/app.example.jsonc config/app.jsonc
 npm run test:config
 npm run preview-email
 npm run test:feeds:live
 ```
 
-For local development, keep non-secret app settings in `config/app.json` and secrets in `.env.local`.
+For local development, keep non-secret app settings in `config/app.jsonc` and secrets in `.env.local`.
 
 ```bash
 npm start -- run
@@ -111,7 +111,7 @@ Modes:
 - `run`: fetch, match, summarize if enabled, render, and send.
 - `preview-email`: fetch, match, render HTML, and print it without sending.
 - `setup-profile`: print a starter profile JSON fragment.
-- `test-config`: validate that `APP_CONFIG` or `config/app.json` can load.
+- `test-config`: validate that `APP_CONFIG`, `config/app.jsonc`, or `config/app.json` can load.
 
 
 ## Feeds

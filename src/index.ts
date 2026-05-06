@@ -6,6 +6,7 @@ loadDotenv({ path: [".env.local", ".env"], quiet: true });
 import journals from "../data/journals.config.js";
 import { loadAppConfig } from "./app-config.js";
 import { parseCliMode, type CliMode } from "./cli.js";
+import { configSummaryLines } from "./config-summary.js";
 import { renderEmail, sendEmail } from "./email.js";
 import { resolveFeedSources } from "./feed-sources.js";
 import { buildInterestCorpus } from "./interest-corpus.js";
@@ -48,6 +49,9 @@ async function runPipeline(mode: Exclude<CliMode, "setup-profile" | "test-config
   console.log("Loading app config...");
   const config = loadAppConfig(env);
   console.log("Loaded app config.");
+  for (const line of configSummaryLines(config)) {
+    console.log(line);
+  }
 
   console.log("Building interest corpus...");
   const interestCorpus = await buildInterestCorpus(config.interests, env);
@@ -108,8 +112,11 @@ export async function main(args: string[] = process.argv.slice(2), env: Env = pr
   }
 
   if (mode === "test-config") {
-    loadAppConfig(env);
+    const config = loadAppConfig(env);
     console.log("Config is valid.");
+    for (const line of configSummaryLines(config)) {
+      console.log(line);
+    }
     return;
   }
 

@@ -4,7 +4,9 @@ import { afterEach, describe, expect, it } from "vitest";
 import { loadAppConfig } from "../src/app-config.js";
 
 const appConfigPath = "config/app.json";
+const appConfigJsoncPath = "config/app.jsonc";
 const originalAppConfigText = existsSync(appConfigPath) ? readFileSync(appConfigPath, "utf8") : null;
+const originalAppConfigJsoncText = existsSync(appConfigJsoncPath) ? readFileSync(appConfigJsoncPath, "utf8") : null;
 
 function json(value: unknown): string {
   return JSON.stringify(value);
@@ -15,9 +17,20 @@ function writeAppConfigFile(value: unknown): void {
   writeFileSync(appConfigPath, json(value));
 }
 
+function writeAppConfigJsoncFile(value: string): void {
+  mkdirSync("config", { recursive: true });
+  writeFileSync(appConfigJsoncPath, value);
+}
+
 function removeAppConfigFile(): void {
   if (existsSync(appConfigPath)) {
     unlinkSync(appConfigPath);
+  }
+}
+
+function removeAppConfigJsoncFile(): void {
+  if (existsSync(appConfigJsoncPath)) {
+    unlinkSync(appConfigJsoncPath);
   }
 }
 
@@ -26,10 +39,17 @@ afterEach(() => {
     if (existsSync(appConfigPath)) {
       unlinkSync(appConfigPath);
     }
-    return;
+  } else {
+    writeFileSync(appConfigPath, originalAppConfigText);
   }
 
-  writeFileSync(appConfigPath, originalAppConfigText);
+  if (originalAppConfigJsoncText === null) {
+    if (existsSync(appConfigJsoncPath)) {
+      unlinkSync(appConfigJsoncPath);
+    }
+  } else {
+    writeFileSync(appConfigJsoncPath, originalAppConfigJsoncText);
+  }
 });
 
 describe("loadAppConfig", () => {
@@ -80,15 +100,16 @@ describe("loadAppConfig", () => {
     expect(config.summary.apiKey).toBe("resolved-summary-key");
   });
 
-  it("loads APP_CONFIG with hash comments outside strings", () => {
+  it("loads APP_CONFIG with JSONC comments outside strings", () => {
     const config = loadAppConfig(
       {},
       `{
-        # top-level comment
+        // top-level comment
         "interests": {
           "profile": {
-            "enabled": true, # enable manual profile
-            "summary": "urban # mobility"
+            "enabled": true, // enable manual profile
+            /* JSONC block comment */
+            "summary": "urban // mobility"
           }
         },
         "feeds": {
@@ -100,13 +121,13 @@ describe("loadAppConfig", () => {
           ]
         },
         "matching": {
-          "paperLimit": 4
+          "paperLimit": 4,
         }
       }`
     );
 
     expect(config.interests.profile.enabled).toBe(true);
-    expect(config.interests.profile.summary).toBe("urban # mobility");
+    expect(config.interests.profile.summary).toBe("urban // mobility");
     expect(config.feeds.customRss).toEqual([{ name: "Feed", rss: "https://example.test/rss.xml#latest" }]);
     expect(config.matching.paperLimit).toBe(4);
   });
@@ -119,8 +140,8 @@ describe("loadAppConfig", () => {
     expect(parsedEnv.EMBEDDING_BASE_URL).toBe("https://api.openai.com/v1");
   });
 
-  it("keeps config/app.example.json parseable as app config", () => {
-    const configText = readFileSync("config/app.example.json", "utf8");
+  it("keeps config/app.example.jsonc parseable as app config", () => {
+    const configText = readFileSync("config/app.example.jsonc", "utf8");
     const config = loadAppConfig(
       {
         ZOTERO_ID: "1234567",
@@ -157,6 +178,7 @@ describe("loadAppConfig", () => {
   });
 
   it("loads config/app.json when no explicit text or APP_CONFIG exists", () => {
+    removeAppConfigJsoncFile();
     writeAppConfigFile({
       feeds: {
         catalogSelections: ["Nature"],
@@ -235,16 +257,84 @@ describe("loadAppConfig", () => {
     });
   });
 
+  it("uses default environment variable names for service credentials", () => {
+    const config = loadAppConfig(
+      {
+        ZOTERO_ID: "12345678",
+        ZOTERO_KEY: "zotero-secret",
+        EMBEDDING_BASE_URL: "https://embedding.example.test/v1",
+        EMBEDDING_API_KEY: "embedding-secret",
+        OPENAI_BASE_URL: "https://summary.example.test/v1",
+        OPENAI_API_KEY: "summary-secret",
+        SENDER: "sender@example.test",
+        RECEIVER: "receiver@example.test",
+        SMTP_SERVER: "smtp.example.test",
+        SMTP_PORT: "2525",
+        SENDER_PASSWORD: "mail-secret"
+      },
+      json({
+        interests: {
+          zotero: {
+            enabled: true
+          }
+        },
+        summary: {
+          enabled: true
+        }
+      })
+    );
+
+    expect(config.interests.zotero.userId).toBe("12345678");
+    expect(config.interests.zotero.apiKey).toBe("zotero-secret");
+    expect(config.matching.api.baseUrl).toBe("https://embedding.example.test/v1");
+    expect(config.matching.api.apiKey).toBe("embedding-secret");
+    expect(config.summary.baseUrl).toBe("https://summary.example.test/v1");
+    expect(config.summary.apiKey).toBe("summary-secret");
+    expect(config.delivery).toEqual({
+      mode: "smtp",
+      from: "sender@example.test",
+      to: "receiver@example.test",
+      smtpHost: "smtp.example.test",
+      smtpPort: 2525,
+      smtpPassword: "mail-secret"
+    });
+  });
+
   it("requires APP_CONFIG or config/app.json", () => {
     removeAppConfigFile();
+    removeAppConfigJsoncFile();
 
     expect(() => loadAppConfig({})).toThrow(
-      "Missing app config. Set APP_CONFIG or provide a local config file."
+      "Missing app config. Set APP_CONFIG or provide config/app.jsonc or config/app.json."
     );
   });
 
+  it("loads config/app.jsonc before config/app.json when no explicit text or APP_CONFIG exists", () => {
+    writeAppConfigFile({
+      interests: {
+        profile: {
+          enabled: true,
+          summary: "json fallback"
+        }
+      }
+    });
+    writeAppConfigJsoncFile(`{
+      // local JSONC config should take priority
+      "interests": {
+        "profile": {
+          "enabled": true,
+          "summary": "jsonc fallback",
+        }
+      }
+    }`);
+
+    const config = loadAppConfig({});
+
+    expect(config.interests.profile.summary).toBe("jsonc fallback");
+  });
+
   it("wraps invalid JSON parse errors with app config context", () => {
-    expect(() => loadAppConfig({}, "{")).toThrow(/^Invalid app config JSON:/);
+    expect(() => loadAppConfig({}, "{")).toThrow(/^Invalid app config JSON\/JSONC:/);
   });
 
   it("resolves ${oc.env:NAME} placeholders throughout the config", () => {

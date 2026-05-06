@@ -1,0 +1,147 @@
+{
+  "interests": {
+    // Do not skip the whole interests section. Enable at least one source: profile or Zotero.
+    "profile": {
+      // Can skip profile if you use Zotero only.
+      // Do not skip enabled when you want to describe interests directly in APP_CONFIG.
+      // true: use the fields below to build the interest profile.
+      // false or empty: ignore this whole profile block.
+      "enabled": true,
+      // Can skip, but recommended for profile mode. Free-text description of what you want to read.
+      // Empty: profile can still use topics/methods/referencePapers, but a fully empty enabled profile adds no useful signal.
+      "summary": "Urban mobility, transport equity, and climate adaptation.",
+      // Can skip. Research topics to prefer.
+      // Empty: no topic keywords are added.
+      "topics": ["urban mobility", "transport equity"],
+      // Can skip. Methods, models, datasets, or analysis styles to prefer.
+      // Empty: no method keywords are added.
+      "methods": ["deep learning"],
+      // Can skip. Journals or venues you especially like.
+      // Empty: no venue preference is added.
+      "favoriteJournals": ["Nature Cities"],
+      // Can skip. Topics to down-rank or avoid.
+      // Empty: nothing is explicitly avoided.
+      "avoidTopics": ["protein folding"],
+      // Can skip. Papers that represent your taste.
+      // Empty: no reference-paper signal is added.
+      "referencePapers": [
+        {
+          // Do not skip inside each reference paper. Empty title contributes little signal.
+          "title": "Transit accessibility and climate resilience",
+          // Can skip. Abstract text improves matching quality.
+          "abstract": "Public transit accessibility, climate adaptation, and cities."
+          // Can skip. Optional alternative/addition:
+          // "notes": "Why this paper is relevant to your interests."
+        }
+      ]
+    },
+    "zotero": {
+      // Can skip Zotero if you use profile only.
+      // Do not skip enabled when you want to derive interests from Zotero.
+      // true: fetch readable Zotero items using userId/apiKey.
+      // false or empty: ignore Zotero settings.
+      "enabled": false,
+      // Can skip if your GitHub Secret is named ZOTERO_ID.
+      // Do not skip if you use a non-default secret/env name.
+      "userId": "${oc.env:ZOTERO_ID}",
+      // Can skip if your GitHub Secret is named ZOTERO_KEY.
+      // Do not skip if you use a non-default secret/env name.
+      "apiKey": "${oc.env:ZOTERO_KEY}",
+      // Can skip. "user" reads /users/{userId}; "group" reads /groups/{userId}. Empty defaults to "user".
+      "libraryType": "user",
+      // Can skip. Collection path globs to include, such as ["2026/survey/**"].
+      // Empty: include all readable Zotero collections/items.
+      "includeCollections": ["2026/survey/**"],
+      // Can skip. Collection path globs to exclude after includes are applied.
+      // Empty: exclude nothing.
+      "excludeCollections": ["archive/**"]
+    }
+  },
+  "feeds": {
+    // Can skip the whole feeds section to use all bundled catalog feeds.
+    // Can skip. Feed catalog names or abbreviations from data/journals.config.ts.
+    // Empty: use all bundled catalog feeds.
+    "catalogSelections": ["Nature", "Science", "Nature Cities"],
+    // Can skip. Direct RSS feeds to add on top of catalogSelections.
+    // Empty: use catalog feeds only.
+    "customRss": [
+      // {
+      //   "name": "Example Lab Feed", // Do not skip inside a custom RSS entry. Display/source name.
+      //   "rss": "https://example.test/feed.xml" // Do not skip inside a custom RSS entry. RSS/Atom URL.
+      // }
+    ]
+  },
+  "matching": {
+    // Can skip the whole matching section to use defaults.
+    // "api": use an OpenAI-compatible embeddings endpoint only when api.apiKey is non-empty.
+    // "local": use the local Hugging Face embedding model.
+    // Empty/omitted: defaults to "api", but falls back to local if apiKey is empty.
+    "provider": "api",
+    "api": {
+      // Can skip. Uses EMBEDDING_BASE_URL when set, otherwise defaults to https://api.openai.com/v1.
+      "baseUrl": "${oc.env:EMBEDDING_BASE_URL}",
+      // Can skip. Embedding model for API mode. Empty/omitted defaults to text-embedding-3-small.
+      "model": "text-embedding-3-small",
+      // Can skip if your GitHub Secret is named EMBEDDING_API_KEY, or if local embeddings are acceptable.
+      // Empty: local embeddings are used instead.
+      "apiKey": "${oc.env:EMBEDDING_API_KEY}",
+      // Can skip. Request batch size for API embeddings. Empty/omitted defaults to 32.
+      "batchSize": 32
+    },
+    "local": {
+      // Can skip. Local embedding model. Empty/omitted defaults to Xenova/all-MiniLM-L6-v2.
+      "model": "Xenova/all-MiniLM-L6-v2",
+      // Can skip. Local embedding batch size. Empty/omitted defaults to 16.
+      "batchSize": 16
+    },
+    // Can skip. Number of recommended papers to keep. Empty/omitted defaults to 10.
+    "paperLimit": 10,
+    // Can skip. Only consider feed papers this many days old. Empty/omitted defaults to 7.
+    "maxPaperAgeDays": 7
+  },
+  "summary": {
+    // Can skip the whole summary section. Summaries are disabled by default.
+    // true: call an OpenAI-compatible chat API for one-sentence TLDRs.
+    // false or empty: use paper abstracts directly, with no summary API calls.
+    "enabled": false,
+    // Can skip. Uses OPENAI_BASE_URL when set, otherwise defaults to https://api.openai.com/v1.
+    "baseUrl": "${oc.env:OPENAI_BASE_URL}",
+    // Can skip. Chat model. Empty/omitted defaults to gpt-4o-mini.
+    "model": "gpt-4o-mini",
+    // Can skip if summary.enabled is false, or if your GitHub Secret is named OPENAI_API_KEY.
+    // Do not skip when summary.enabled is true and you use a non-default secret/env name.
+    // Empty while enabled: summaries are skipped by the pipeline.
+    "apiKey": "${oc.env:OPENAI_API_KEY}",
+    // Can skip. Output language for TLDRs. Empty/omitted defaults to English.
+    "language": "English",
+    // Can skip. Max completion tokens. Empty/omitted defaults to 1024.
+    "maxTokens": 1024
+  },
+  "delivery": {
+    // Can skip the whole delivery section if your GitHub Secrets use the default names:
+    // SENDER, RECEIVER, SMTP_SERVER, SMTP_PORT, SENDER_PASSWORD.
+    // Do not skip delivery when you use non-default secret/env names.
+    // Only "smtp" is supported.
+    "mode": "smtp",
+    // Can skip if your GitHub Secret is named SENDER.
+    "from": "${oc.env:SENDER}",
+    // Can skip if your GitHub Secret is named RECEIVER.
+    "to": "${oc.env:RECEIVER}",
+    // Can skip if your GitHub Secret is named SMTP_SERVER.
+    "smtpHost": "${oc.env:SMTP_SERVER}",
+    // Can skip if your GitHub Secret is named SMTP_PORT, or if your SMTP server uses port 465.
+    // Empty/omitted defaults to 465.
+    "smtpPort": "${oc.env:SMTP_PORT}",
+    // Can skip if your GitHub Secret is named SENDER_PASSWORD.
+    "smtpPassword": "${oc.env:SENDER_PASSWORD}"
+  },
+  "runtime": {
+    // Can skip the whole runtime section to use defaults.
+    // true: print rendered email HTML and skip actual sending in run mode.
+    // false or empty: scheduled run sends email normally.
+    "debug": true,
+    // true: still send an email when no papers match.
+    // false or empty: skip sending when there are no recommendations.
+    "sendEmpty": true
+  }
+}

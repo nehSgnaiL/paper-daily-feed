@@ -87,39 +87,109 @@ type UnknownRecord = Record<string, unknown>;
 
 const ENV_REFERENCE = /^\$\{oc\.env:([A-Z0-9_]+)\}$/;
 
-function stripHashComments(configText: string): string {
-  return configText
-    .split("\n")
-    .map((line) => {
-      let inLineString = false;
-      let lineEscaped = false;
+function stripJsoncComments(configText: string): string {
+  let output = "";
+  let inLineString = false;
+  let escaped = false;
+  let inBlockComment = false;
 
-      for (let index = 0; index < line.length; index += 1) {
-        const char = line[index];
+  for (let index = 0; index < configText.length; index += 1) {
+    const char = configText[index];
+    const nextChar = configText[index + 1];
 
-        if (lineEscaped) {
-          lineEscaped = false;
-          continue;
-        }
-
-        if (char === "\\" && inLineString) {
-          lineEscaped = true;
-          continue;
-        }
-
-        if (char === "\"") {
-          inLineString = !inLineString;
-          continue;
-        }
-
-        if (char === "#" && !inLineString) {
-          return line.slice(0, index);
-        }
+    if (inBlockComment) {
+      if (char === "*" && nextChar === "/") {
+        inBlockComment = false;
+        index += 1;
+        continue;
       }
+      if (char === "\n") {
+        output += char;
+      }
+      continue;
+    }
 
-      return line;
-    })
-    .join("\n");
+    if (escaped) {
+      output += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\" && inLineString) {
+      output += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === "\"") {
+      output += char;
+      inLineString = !inLineString;
+      continue;
+    }
+
+    if (!inLineString && char === "/" && nextChar === "*") {
+      inBlockComment = true;
+      index += 1;
+      continue;
+    }
+
+    if (!inLineString && (char === "#" || (char === "/" && nextChar === "/"))) {
+      while (index < configText.length && configText[index] !== "\n") {
+        index += 1;
+      }
+      if (index < configText.length) {
+        output += configText[index];
+      }
+      continue;
+    }
+
+    output += char;
+  }
+
+  return output;
+}
+
+function stripJsoncTrailingCommas(configText: string): string {
+  let output = "";
+  let inLineString = false;
+  let escaped = false;
+
+  for (let index = 0; index < configText.length; index += 1) {
+    const char = configText[index];
+
+    if (escaped) {
+      output += char;
+      escaped = false;
+      continue;
+    }
+
+    if (char === "\\" && inLineString) {
+      output += char;
+      escaped = true;
+      continue;
+    }
+
+    if (char === "\"") {
+      output += char;
+      inLineString = !inLineString;
+      continue;
+    }
+
+    if (!inLineString && char === ",") {
+      const nextSignificantChar = configText.slice(index + 1).match(/\S/)?.[0];
+      if (nextSignificantChar === "}" || nextSignificantChar === "]") {
+        continue;
+      }
+    }
+
+    output += char;
+  }
+
+  return output;
+}
+
+function stripJsonc(configText: string): string {
+  return stripJsoncTrailingCommas(stripJsoncComments(configText));
 }
 
 function asRecord(value: unknown): UnknownRecord {
@@ -215,10 +285,10 @@ function asProvider(value: unknown): "api" | "local" {
 
 function parseAppConfigJson(configText: string): UnknownRecord {
   try {
-    return asRecord(JSON.parse(stripHashComments(configText)));
+    return asRecord(JSON.parse(stripJsonc(configText)));
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error);
-    throw new Error(`Invalid app config JSON: ${message}`);
+    throw new Error(`Invalid app config JSON/JSONC: ${message}`);
   }
 }
 
@@ -259,10 +329,17 @@ function resolveConfigReferences(value: unknown, env: Env): unknown {
 }
 
 function readLocalConfig(): string | undefined {
+  if (existsSync("config/app.jsonc")) {
+    return readFileSync("config/app.jsonc", "utf8");
+  }
   return existsSync("config/app.json") ? readFileSync("config/app.json", "utf8") : undefined;
 }
 
-function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
+function envValue(env: Env, name: string, defaultValue = ""): string {
+  return env[name] ?? defaultValue;
+}
+
+function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
   const interests = asRecord(rawConfig.interests);
   const profile = asRecord(interests.profile);
   const zotero = asRecord(interests.zotero);
@@ -287,8 +364,8 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
       },
       zotero: {
         enabled: asBoolean(zotero.enabled, false),
-        userId: asString(zotero.userId, ""),
-        apiKey: asString(zotero.apiKey, ""),
+        userId: asString(zotero.userId, envValue(env, "ZOTERO_ID")),
+        apiKey: asString(zotero.apiKey, envValue(env, "ZOTERO_KEY")),
         libraryType: asLibraryType(zotero.libraryType),
         includeCollections: asStringArray(zotero.includeCollections, []),
         excludeCollections: asStringArray(zotero.excludeCollections, [])
@@ -301,9 +378,9 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
     matching: {
       provider: asProvider(matching.provider),
       api: {
-        baseUrl: asString(matchingApi.baseUrl, "https://api.openai.com/v1"),
+        baseUrl: asString(matchingApi.baseUrl, envValue(env, "EMBEDDING_BASE_URL", "https://api.openai.com/v1")),
         model: asString(matchingApi.model, "text-embedding-3-small"),
-        apiKey: asString(matchingApi.apiKey, ""),
+        apiKey: asString(matchingApi.apiKey, envValue(env, "EMBEDDING_API_KEY")),
         batchSize: asNumber(matchingApi.batchSize, 32)
       },
       local: {
@@ -315,19 +392,19 @@ function normalizeAppConfig(rawConfig: UnknownRecord): AppConfig {
     },
     summary: {
       enabled: asBoolean(summary.enabled, false),
-      baseUrl: asString(summary.baseUrl, "https://api.openai.com/v1"),
+      baseUrl: asString(summary.baseUrl, envValue(env, "OPENAI_BASE_URL", "https://api.openai.com/v1")),
       model: asString(summary.model, "gpt-4o-mini"),
-      apiKey: asString(summary.apiKey, ""),
+      apiKey: asString(summary.apiKey, envValue(env, "OPENAI_API_KEY")),
       language: asString(summary.language, "English"),
       maxTokens: asNumber(summary.maxTokens, 1024)
     },
     delivery: {
       mode: "smtp",
-      from: asString(delivery.from, ""),
-      to: asString(delivery.to, ""),
-      smtpHost: asString(delivery.smtpHost, ""),
-      smtpPort: asNumber(delivery.smtpPort, 465),
-      smtpPassword: asString(delivery.smtpPassword, "")
+      from: asString(delivery.from, envValue(env, "SENDER")),
+      to: asString(delivery.to, envValue(env, "RECEIVER")),
+      smtpHost: asString(delivery.smtpHost, envValue(env, "SMTP_SERVER")),
+      smtpPort: asNumber(delivery.smtpPort ?? env.SMTP_PORT, 465),
+      smtpPassword: asString(delivery.smtpPassword, envValue(env, "SENDER_PASSWORD"))
     },
     runtime: {
       debug: asBoolean(runtime.debug, false),
@@ -340,8 +417,8 @@ export function loadAppConfig(env: Env = process.env, explicitConfigText?: strin
   const configText = explicitConfigText ?? (env.APP_CONFIG?.trim() ? env.APP_CONFIG : undefined) ?? readLocalConfig();
 
   if (configText === undefined) {
-    throw new Error("Missing app config. Set APP_CONFIG or provide a local config file.");
+    throw new Error("Missing app config. Set APP_CONFIG or provide config/app.jsonc or config/app.json.");
   }
 
-  return normalizeAppConfig(asRecord(resolveConfigReferences(parseAppConfigJson(configText), env)));
+  return normalizeAppConfig(asRecord(resolveConfigReferences(parseAppConfigJson(configText), env)), env);
 }
