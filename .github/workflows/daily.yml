@@ -19,6 +19,29 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Check fork sync status
+        if: ${{ github.repository != 'nehSgnaiL/paper-daily-feed' }}
+        run: |
+          set -euo pipefail
+
+          git remote add upstream https://github.com/nehSgnaiL/paper-daily-feed.git
+          git fetch --no-tags upstream main
+
+          if ! git merge-base --is-ancestor upstream/main HEAD; then
+            {
+              echo "### Sync fork reminder"
+              echo
+              echo "Your fork is behind \`nehSgnaiL/paper-daily-feed:main\`."
+              echo "Sync your fork to receive the latest features and bug fixes, then rerun this workflow."
+              echo
+              echo "Open your fork on GitHub and click **Sync fork** -> **Update branch**."
+            } >> "$GITHUB_STEP_SUMMARY"
+
+            echo "::warning title=Sync fork recommended::Your fork is behind upstream. Sync it to receive the latest features and bug fixes."
+          fi
 
       - name: Setup Node.js
         uses: actions/setup-node@v6

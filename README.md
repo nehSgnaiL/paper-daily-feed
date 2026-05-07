@@ -123,6 +123,12 @@ Because you forked this repository, GitHub automatically pauses automated tasks 
 > 
 > To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ **pencil icon** in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
 
+> [!TIP]
+> **Keep your fork updated:**
+> The daily workflow checks whether your fork is behind [`nehSgnaiL/paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed). If it is behind, GitHub Actions will show a non-blocking **Sync fork reminder** so you can receive the latest features and bug fixes.
+>
+> To update, open your fork on GitHub and click **Sync fork** → **Update branch**, then rerun **Test paper feeds** or **Daily paper feeds**.
+
 <h2>Feedback</h2>
 
 Any issues, questions, or experience could be shared via [raising issue](https://github.com/nehSgnaiL/paper-daily-feed/issues/new) in the repository.
