@@ -1,0 +1,83 @@
+name: Bug report
+description: Report a setup, workflow, feed, matching, summary, or email delivery problem.
+title: "[Bug]: "
+labels:
+  - bug
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for reporting a problem. Please include enough detail to reproduce it without sharing secrets.
+  - type: checkboxes
+    id: checks
+    attributes:
+      label: Pre-checks
+      options:
+        - label: I have read the README setup guide.
+          required: true
+        - label: I have removed or masked all secrets, API keys, email addresses, and tokens.
+          required: true
+  - type: dropdown
+    id: area
+    attributes:
+      label: Affected area
+      options:
+        - GitHub Actions setup
+        - APP_CONFIG or config file
+        - Feed fetching
+        - Paper matching or ranking
+        - TLDR summary generation
+        - Email rendering or delivery
+        - Zotero integration
+        - Local run
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behavior
+      description: What did you expect to happen?
+    validations:
+      required: true
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behavior
+      description: What happened instead? Include error messages, workflow step names, or screenshots if useful.
+    validations:
+      required: true
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce
+      description: List the smallest set of steps that triggers the problem.
+      placeholder: |
+        1. Fork the repository
+        2. Set ...
+        3. Run ...
+        4. See ...
+    validations:
+      required: true
+  - type: textarea
+    id: config
+    attributes:
+      label: Relevant configuration
+      description: Paste only non-secret config snippets. Mask private values.
+      render: json
+  - type: input
+    id: run-url
+    attributes:
+      label: Workflow run URL
+      description: If this happened in GitHub Actions, paste the failed run URL.
+  - type: textarea
+    id: logs
+    attributes:
+      label: Logs or error output
+      description: Paste the smallest useful log excerpt. Mask secrets.
+      render: shell
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context
+      description: Add anything else that may help diagnose the issue.

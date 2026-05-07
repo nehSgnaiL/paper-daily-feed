@@ -1,0 +1,8 @@
+blank_issues_enabled: true
+contact_links:
+  - name: Setup guide
+    url: https://github.com/nehSgnaiL/paper-daily-feed#readme
+    about: Check the setup guide before opening configuration or workflow issues.
+  - name: 中文配置指南
+    url: https://github.com/nehSgnaiL/paper-daily-feed/blob/main/README.zh-CN.md
+    about: 创建配置或工作流问题前，可先查看中文配置指南。

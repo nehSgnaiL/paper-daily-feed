@@ -1,0 +1,51 @@
+name: 功能建议
+description: 建议改进配置、feeds、匹配、总结、邮件输出或集成能力。
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        感谢提出建议。请先描述用户问题，再描述你希望看到的解决方案。
+  - type: dropdown
+    id: area
+    attributes:
+      label: 范围
+      options:
+        - 配置或文档
+        - GitHub Actions 工作流
+        - Feed 来源
+        - 论文匹配或排序
+        - TLDR 总结生成
+        - 邮件渲染或发送
+        - Zotero 集成
+        - 配置项
+        - 开发体验
+        - 其他
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: 问题
+      description: 这个功能要解决什么问题？谁会受到影响？
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: 建议方案
+      description: 描述你希望的行为、配置方式或使用流程。
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: 考虑过的替代方案
+      description: 你试过或考虑过哪些 workaround 或其他方案？
+  - type: textarea
+    id: examples
+    attributes:
+      label: 示例或参考
+      description: 可以添加链接、截图、配置片段或示例输出。

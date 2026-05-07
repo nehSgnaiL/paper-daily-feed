@@ -1,0 +1,51 @@
+name: Feature request
+description: Suggest an improvement to setup, feeds, matching, summaries, email output, or integrations.
+title: "[Feature]: "
+labels:
+  - enhancement
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for suggesting an improvement. Please describe the user problem first, then the solution you have in mind.
+  - type: dropdown
+    id: area
+    attributes:
+      label: Area
+      options:
+        - Setup or documentation
+        - GitHub Actions workflow
+        - Feed sources
+        - Paper matching or ranking
+        - TLDR summary generation
+        - Email rendering or delivery
+        - Zotero integration
+        - Configuration
+        - Developer experience
+        - Other
+    validations:
+      required: true
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem
+      description: What problem would this solve? Who is affected?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution
+      description: Describe the behavior, configuration, or workflow you want.
+    validations:
+      required: true
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered
+      description: What workarounds or other approaches have you tried or considered?
+  - type: textarea
+    id: examples
+    attributes:
+      label: Examples or references
+      description: Add links, screenshots, config snippets, or sample output if useful.
