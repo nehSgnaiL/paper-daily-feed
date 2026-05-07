@@ -119,7 +119,7 @@ Because you forked this repository, GitHub automatically pauses automated tasks 
 
 > [!NOTE]
 > **Changing the daily email time:** 
-> By default, the system is scheduled to run at 09:11 UTC+8 (01:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 1 * * *`. 
+> By default, the system is scheduled to run at 06:11 UTC+8 (22:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 22 * * *`. 
 > 
 > To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ **pencil icon** in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
 
