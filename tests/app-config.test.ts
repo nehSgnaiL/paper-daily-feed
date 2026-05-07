@@ -177,6 +177,22 @@ describe("loadAppConfig", () => {
     expect(config.matching.paperLimit).toBe(5);
   });
 
+  it("allows workflow environment overrides for test runs", () => {
+    const config = loadAppConfig(
+      {
+        PAPER_LIMIT: "3",
+        RUNTIME_DEBUG: "false"
+      },
+      json({
+        matching: { paperLimit: 10 },
+        runtime: { debug: true }
+      })
+    );
+
+    expect(config.matching.paperLimit).toBe(3);
+    expect(config.runtime.debug).toBe(false);
+  });
+
   it("loads config/app.json when no explicit text or APP_CONFIG exists", () => {
     removeAppConfigJsoncFile();
     writeAppConfigFile({

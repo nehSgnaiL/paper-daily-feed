@@ -33,27 +33,17 @@ jobs:
       - name: Run recommendation feed in test mode
         env:
           APP_CONFIG: ${{ vars.APP_CONFIG }}
+          PAPER_LIMIT: 3
+          RUNTIME_DEBUG: false
           ZOTERO_ID: ${{ secrets.ZOTERO_ID }}
           ZOTERO_KEY: ${{ secrets.ZOTERO_KEY }}
-          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL }}
+          OPENAI_BASE_URL: ${{ vars.OPENAI_BASE_URL || secrets.OPENAI_BASE_URL }}
           OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
-          EMBEDDING_BASE_URL: ${{ vars.EMBEDDING_BASE_URL }}
+          EMBEDDING_BASE_URL: ${{ vars.EMBEDDING_BASE_URL || secrets.EMBEDDING_BASE_URL }}
           EMBEDDING_API_KEY: ${{ secrets.EMBEDDING_API_KEY }}
           SENDER: ${{ secrets.SENDER }}
           SENDER_PASSWORD: ${{ secrets.SENDER_PASSWORD }}
           RECEIVER: ${{ secrets.RECEIVER }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-        run: |
-          mkdir -p generated
-          npm start -- preview-email | tee generated/preview-email.log
-          sed -n '/^<!doctype html>/,$p' generated/preview-email.log > generated/email.html
-          test -s generated/email.html
-
-      - name: Upload generated email
-        uses: actions/upload-artifact@v6
-        with:
-          name: generated-email
-          path: |
-            generated/email.html
-            generated/preview-email.log
+        run: npm start -- run

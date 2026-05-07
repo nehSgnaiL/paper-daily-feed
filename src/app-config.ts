@@ -339,6 +339,10 @@ function envValue(env: Env, name: string, defaultValue = ""): string {
   return env[name] ?? defaultValue;
 }
 
+function configOrEnv(configValue: unknown, env: Env, envName: string): unknown {
+  return env[envName] ?? configValue;
+}
+
 function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
   const interests = asRecord(rawConfig.interests);
   const profile = asRecord(interests.profile);
@@ -387,7 +391,7 @@ function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
         model: asString(matchingLocal.model, "Xenova/all-MiniLM-L6-v2"),
         batchSize: asNumber(matchingLocal.batchSize, 16)
       },
-      paperLimit: asNumber(matching.paperLimit, 10),
+      paperLimit: asNumber(configOrEnv(matching.paperLimit, env, "PAPER_LIMIT"), 10),
       maxPaperAgeDays: asNumber(matching.maxPaperAgeDays, 7)
     },
     summary: {
@@ -407,7 +411,7 @@ function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
       smtpPassword: asString(delivery.smtpPassword, envValue(env, "SENDER_PASSWORD"))
     },
     runtime: {
-      debug: asBoolean(runtime.debug, false),
+      debug: asBoolean(configOrEnv(runtime.debug, env, "RUNTIME_DEBUG"), false),
       sendEmpty: asBoolean(runtime.sendEmpty, false)
     }
   };
