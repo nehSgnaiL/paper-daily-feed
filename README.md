@@ -19,9 +19,9 @@
 
 <h1>paper-daily-feed</h1>
 
-> The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, use this repository to curate a daily recommendation & summary tailored exactly to your vibe.
+> The AI era's paper boom is exhausting to track. Stop endlessly chasing new papers, and let [`paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed) curate daily summaries personalized for your vibe.
 
-Curate your daily feed based on your research interests or Zotero library, and get the latest papers sent right to your email.
+**Smart daily feeds** tailored to your research interests or Zotero library. Get the latest, most relevant papers **delivered straight to your inbox**. 100% cloud-based, **free**, **no installs**, and quick to set up.
 
 <div align="center">
   <picture>
@@ -38,8 +38,8 @@ Curate your daily feed based on your research interests or Zotero library, and g
 
 - [Get started](#get-started)
   - [1. Fork the Repository](#1-fork-the-repository)
-  - [2. Create Repository Secrets](#2-create-repository-secrets)
-  - [3. Create Repository Variable](#3-create-repository-variable)
+  - [2. Create Secrets](#2-create-secrets)
+  - [3. Create Variable](#3-create-variable)
   - [4. Done \& Validation](#4-done--validation)
 - [Feeds](#feeds)
 - [Local Run](#local-run)
@@ -47,12 +47,14 @@ Curate your daily feed based on your research interests or Zotero library, and g
 
 ## Get started
 
+Setup happens entirely in GitHub. Fork the repo, add a few secrets and one config variable, then run the test workflow.
+
 ### 1. Fork the Repository
 
 - Fork the repository: https://github.com/nehSgnaiL/paper-daily-feed/fork
 - Select your GitHub account as the destination
 
-### 2. Create Repository Secrets
+### 2. Create Secrets
 
 Go to your GitHub repository → **Settings** → **Secrets and variables** → **Actions** → **Secrets**. Then create these secrets as needed:
 
@@ -70,9 +72,9 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 | `EMBEDDING_BASE_URL` | `Optional` Embeddings API for text matching. Generally leave it empty, since the performance of local embedding model is acceptable. | `https://api.openai.com/v1` |
 | `EMBEDDING_API_KEY` | `Optional` Set corresponding key if you use Embeddings API. | `sk-...` |
 
-### 3. Create Repository Variable
+### 3. Create Variable
 
-In **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named **`APP_CONFIG`**.
+In your GitHub repository, **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named **`APP_CONFIG`**.
 
 > [!TIP]
 > - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-repository-secrets) will be read automatically.
@@ -140,6 +142,8 @@ This repo supports bundled catalog feeds and direct RSS feeds.
 ```
 
 ## Local Run
+
+Local setup is optional. Use it only if you want to preview or customize the feed on your machine.
 
 ```bash
 # Install dependencies
