@@ -8,10 +8,19 @@
   </a>
 </p>
 
+<p align="center">
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed">
+    <img src="https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&style=flat-square" alt="Last Update" />
+  </a>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed/stargazers">
+    <img src="https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social" alt="Stars" />
+  </a>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed/network/members">
+    <img src="https://img.shields.io/github/forks/nehSgnaiL/paper-daily-feed?style=social" alt="Forks" />
+  </a>
+</p>
+
 # paper-daily-feed
-[![Last Update](https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&style=flat-square)](https://github.com/nehSgnaiL/paper-daily-feed)
-[![star](https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/stargazers)
-[![fork](https://img.shields.io/github/forks/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/network/members) 
 
 > The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, use this repository to curate a daily recommendation & summary tailored exactly to your vibe.
 
@@ -28,7 +37,7 @@ The recommendation can be produced based on two sources (enable either one or bo
   </picture>
 </p>
 <p align = "center">
-<b>Fig. 1</b>. Preview for daily feeds.
+<i>Preview for daily feeds.</i>
 </p>
 
 ## Get started
