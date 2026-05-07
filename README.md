@@ -77,10 +77,7 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 In your GitHub repository, **Settings** → **Secrets and variables** → **Actions** → **Variables**, create a variable named **`APP_CONFIG`**.
 
 > [!TIP]
-> - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-repository-secrets) will be read automatically.
-> - You can enable either one or both interest sources: Textual profile and Zotero.
-> - Below examples show minimal configs for each source. You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
-
+> - You can enable either one or both interest sources: Textual profile and Zotero. Below examples show minimal configs for each source. 
 
 **Example: Profile-First `APP_CONFIG`:**
 
@@ -108,6 +105,10 @@ In your GitHub repository, **Settings** → **Secrets and variables** → **Acti
   }
 }
 ```
+
+> [!NOTE]
+> - You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
+> - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-repository-secrets) will be read automatically.
 
 ### 4. Done & Validation
 
