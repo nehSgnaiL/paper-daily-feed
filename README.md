@@ -110,24 +110,24 @@ Next, we need to add your configuration settings. Because this isn't sensitive d
 
 Because you forked this repository, GitHub automatically pauses automated tasks to be safe. We just need to turn them on!
 
-1. Go to the ▶️ **Actions** tab at the top of your forked repository.
+1. Go to the ▶️ [**Actions**](../../actions) tab at the top of your forked repository.
 2. Since this is a forked repo, click the green **"I understand my workflows, go ahead and enable them"** button.
-3. In the left sidebar, click **Test paper feeds**. Then, click the **Run workflow** dropdown on the right and hit the green **Run workflow** button.
-4. Next, click **Daily paper feeds** in the left sidebar and enable it.
+3. In the left sidebar, click [**Test paper feeds**](../../actions/workflows/test.yml). Then, click the **Run workflow** dropdown on the right and hit the green **Run workflow** button.
+4. Next, click [**Daily paper feeds**](../../actions/workflows/daily.yml) in the left sidebar and enable it.
 5. If everything goes smoothly ✅, the run will pass and you will receive a short recommendation email.
-6. **Done!** 😄 You will now get your automated daily emails. You can also manually trigger the **Daily paper feeds** workflow anytime to get an instant update.
+6. **Done!** 😄 You will now get your automated daily emails. You can also manually trigger the [**Daily paper feeds**](../../actions/workflows/daily.yml) workflow anytime to get an instant update.
 
 > [!NOTE]
 > **Changing the daily email time:** 
 > By default, the system is scheduled to run at 06:11 UTC+8 (22:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 22 * * *`. 
 > 
-> To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ **pencil icon** in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
+> To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ [**pencil icon**](../../edit/main/.github/workflows/daily.yml) in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
 
 > [!TIP]
 > **Keep your fork updated:**
 > The daily workflow checks whether your fork is behind [`nehSgnaiL/paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed). If it is behind, GitHub Actions will show a non-blocking **Sync fork reminder** so you can receive the latest features and bug fixes.
 >
-> To update, open your fork on GitHub and click **Sync fork** → **Update branch**, then rerun **Test paper feeds** or **Daily paper feeds**.
+> To update, open your fork on GitHub and click **Sync fork** → **Update branch**.
 
 <h2>Feedback</h2>
 

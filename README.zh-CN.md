@@ -110,24 +110,24 @@
 
 Fork 仓库后，GitHub 会默认暂停自动任务。需要手动启用一次。
 
-1. 进入仓库顶部的 ▶️ **Actions** 标签页。
+1. 进入仓库顶部的 ▶️ [**Actions**](../../actions) 标签页。
 2. 如果这是 fork 仓库，点击绿色的 **"I understand my workflows, go ahead and enable them"** 按钮。
-3. 在左侧栏点击 **Test paper feeds**，再点击右侧的 **Run workflow** 下拉按钮，并点击绿色 **Run workflow**。
-4. 接着在左侧栏点击 **Daily paper feeds** 并启用它。
+3. 在左侧栏点击 [**Test paper feeds**](../../actions/workflows/test.yml)，再点击右侧的 **Run workflow** 下拉按钮，并点击绿色 **Run workflow**。
+4. 接着在左侧栏点击 [**Daily paper feeds**](../../actions/workflows/daily.yml) 并启用它。
 5. 如果一切顺利，运行会通过，并且你会收到一封简短的推荐邮件。
-6. 完成。之后你会收到自动每日邮件，也可以随时手动触发 **Daily paper feeds** 工作流来立即获取一次推送。
+6. 完成。之后你会收到自动每日邮件，也可以随时手动触发 [**Daily paper feeds**](../../actions/workflows/daily.yml) 工作流来立即获取一次推送。
 
 > [!NOTE]
 > **修改每日邮件发送时间：**
 > 默认计划任务在 UTC+8 的 06:11 运行，也就是 UTC 的 22:11。这个时间由 `cron` 表达式控制，默认是：`11 22 * * *`。
 >
-> 如需修改，打开 [`.github/workflows/daily.yml`](./.github/workflows/daily.yml)，点击右上角 ✏️ **pencil icon** 编辑 cron 数字。可以用 [crontab.guru](https://crontab.guru/) 辅助理解和生成 cron 表达式。
+> 如需修改，打开 [`.github/workflows/daily.yml`](./.github/workflows/daily.yml)，点击右上角 ✏️ [**pencil icon**](../../edit/main/.github/workflows/daily.yml) 编辑 cron 数字。可以用 [crontab.guru](https://crontab.guru/) 辅助理解和生成 cron 表达式。
 
 > [!TIP]
 > **保持 fork 仓库更新：**
 > 每日工作流会检查你的 fork 是否落后于 [`nehSgnaiL/paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed)。如果落后，GitHub Actions 会显示一个不影响运行的 **Sync fork reminder**，提醒你同步以获取最新功能和 bug 修复。
 >
-> 更新时，打开你的 fork 仓库，点击 **Sync fork** → **Update branch**，然后重新运行 **Test paper feeds** 或 **Daily paper feeds**。
+> 更新时，打开你的 fork 仓库，点击 **Sync fork** → **Update branch**。
 
 <h2>反馈</h2>
 
