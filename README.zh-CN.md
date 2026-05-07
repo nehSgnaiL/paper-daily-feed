@@ -17,11 +17,11 @@
 
 </div>
 
+> AI 时代论文爆发式增长，持续追踪新论文非常耗费精力。让 [`paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed) 按你的研究兴趣自动筛选总结每日论文。
+
 <h1>paper-daily-feed</h1>
 
 [English](./README.md) | [简体中文](./README.zh-CN.md)
-
-> AI 时代论文爆发式增长，持续追踪新论文非常耗时。让 [`paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed) 按你的研究兴趣自动筛选每日论文摘要。
 
 **智能每日论文推送**，可根据你的研究兴趣或 Zotero 文库个性化筛选。最新、最相关的论文会直接发送到你的邮箱。全流程云端运行，**免费**、**无需本地安装**，配置很快。
 
