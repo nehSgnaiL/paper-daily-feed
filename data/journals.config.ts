@@ -91,6 +91,10 @@ const journals: Journal[] = [
     rss: "https://rss.sciencedirect.com/publication/science/01436228"
   },
   {
+    name: "Landscape and Urban Planning",
+    rss: "https://rss.sciencedirect.com/publication/science/01692046"
+  },
+  {
     name: "IEEE Transactions on Intelligent Transportation Systems",
     abbr: "IEEE T-ITS",
     rss: "https://ieeexplore.ieee.org/rss/TOC6979.XML"
