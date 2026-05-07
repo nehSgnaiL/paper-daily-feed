@@ -9,12 +9,18 @@
 </div>
 
 <div align="center">
-
-[![Last Update](https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&style=flat-square)](https://github.com/nehSgnaiL/paper-daily-feed)
-[![Success Count](https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FnehSgnaiL%2Fpaper-daily-feed%2Factions%2Fworkflows%2Fdaily.yml%2Fruns%3Fstatus%3Dsuccess&query=%24.total_count&label=Success%20feeds&color=success&style=flat-square)](https://github.com/nehSgnaiL/paper-daily-feed/actions/workflows/daily.yml)
-[![Stars](https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/stargazers)
-[![Forks](https://img.shields.io/github/forks/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/network/members)
-
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed">
+    <img alt="Last update" src="https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&amp;style=flat-square" />
+  </a>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed/actions/workflows/daily.yml">
+    <img alt="Success feeds" src="https://img.shields.io/badge/dynamic/json?url=https%3A%2F%2Fapi.github.com%2Frepos%2FnehSgnaiL%2Fpaper-daily-feed%2Factions%2Fworkflows%2Fdaily.yml%2Fruns%3Fstatus%3Dsuccess&amp;query=%24.total_count&amp;label=Success%20feeds&amp;color=success&amp;style=flat-square" />
+  </a>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed/stargazers">
+    <img alt="GitHub stars" src="https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social" />
+  </a>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed/network/members">
+    <img alt="GitHub forks" src="https://img.shields.io/github/forks/nehSgnaiL/paper-daily-feed?style=social" />
+  </a>
 </div>
 
 > AI 时代论文爆发式增长，持续追踪新论文非常耗费精力。让 [`paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed) 按你的研究兴趣自动筛选总结每日论文。
