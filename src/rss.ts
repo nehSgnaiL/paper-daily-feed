@@ -65,6 +65,34 @@ function itemText(item: ParserItem): string {
   return normalizeField(item.contentSnippet ?? item.summary ?? item.content ?? "");
 }
 
+function removeLabeledFeedMetadata(text: string): string {
+  return normalizeField(
+    text
+      .replace(
+        /(?:^|\s)Publication date:\s*.*?(?=\s*(?:Source:|Author\(s\):|Abstract:|Summary:|Description:|$))/gi,
+        " "
+      )
+      .replace(/(?:^|\s)Source:\s*.*?(?=\s*(?:Author\(s\):|Abstract:|Summary:|Description:|$))/gi, " ")
+      .replace(/(?:^|\s)Author\(s\):\s*.*?(?=\s*(?:Abstract:|Summary:|Description:|$))/gi, " ")
+  );
+}
+
+function normalizeAbstract(item: ParserItem): string {
+  const text = itemText(item);
+  if (!text) {
+    return "";
+  }
+
+  const labeledAbstract = text.match(
+    /(?:^|\s)(?:Abstract|Summary|Description):\s*(.+?)(?=\s*(?:Publication date:|Source:|Author\(s\):|$))/i
+  )?.[1];
+  if (labeledAbstract) {
+    return removeLabeledFeedMetadata(labeledAbstract);
+  }
+
+  return removeLabeledFeedMetadata(text);
+}
+
 function isScienceDirectItem(item: ParserItem): boolean {
   return [item.link, item.guid].some((value) => value?.toLowerCase().includes("sciencedirect.com"));
 }
@@ -74,7 +102,9 @@ function parseScienceDirectAuthors(item: ParserItem): string[] {
     return [];
   }
 
-  const match = itemText(item).match(/(?:^|\n|\s)Author\(s\):\s*(.+?)(?=\s*(?:Publication date:|Source:|$))/i);
+  const match = itemText(item).match(
+    /(?:^|\n|\s)Author\(s\):\s*(.+?)(?=\s*(?:Publication date:|Source:|Abstract:|Summary:|Description:|$))/i
+  );
   if (!match?.[1]) {
     return [];
   }
@@ -127,7 +157,9 @@ function parseScienceDirectPublicationDate(item: ParserItem): Date | null {
     return null;
   }
 
-  const match = itemText(item).match(/(?:^|\n|\s)Publication date:\s*(.+?)(?=\s*(?:Source:|Author\(s\):|$))/i);
+  const match = itemText(item).match(
+    /(?:^|\n|\s)Publication date:\s*(.+?)(?=\s*(?:Source:|Author\(s\):|Abstract:|Summary:|Description:|$))/i
+  );
   const value = match?.[1]?.trim();
   if (!value) {
     return null;
@@ -159,7 +191,7 @@ export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper 
   return {
     journal,
     title,
-    abstract: stripHtml(item.contentSnippet ?? item.summary ?? item.content ?? ""),
+    abstract: normalizeAbstract(item),
     url,
     publishedAt: normalizeDate(item),
     ...(authors ? { authors } : {}),

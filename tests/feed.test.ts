@@ -48,6 +48,22 @@ describe("normalizeFeedItem", () => {
     });
 
     expect(paper).toMatchObject({
+      abstract: "",
+      authors: ["Asli Mutlu", "Tatiana Filatova"],
+      publishedAt: new Date("2026-09-01T00:00:00.000Z")
+    });
+  });
+
+  it("keeps ScienceDirect abstract content when metadata labels precede it", () => {
+    const paper = normalizeFeedItem("CEUS", {
+      title: "Urban housing markets under flood risk",
+      link: "https://www.sciencedirect.com/science/article/pii/S0198971526000426?dgcid=rss_sd_all",
+      contentSnippet:
+        "Publication date: September 2026\nSource: Computers, Environment and Urban Systems, Volume 128\nAuthor(s): Asli Mutlu, Tatiana Filatova\nAbstract: This paper studies urban housing markets under flood risk."
+    });
+
+    expect(paper).toMatchObject({
+      abstract: "This paper studies urban housing markets under flood risk.",
       authors: ["Asli Mutlu", "Tatiana Filatova"],
       publishedAt: new Date("2026-09-01T00:00:00.000Z")
     });

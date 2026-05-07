@@ -27,6 +27,13 @@ function findJournal(selection: string): Journal {
   return journal;
 }
 
+function expectNoMetadataOnlyAbstract(abstract: string | undefined, family: string): void {
+  const value = abstract?.trim() ?? "";
+  expect(value, `${family} abstract should not expose feed metadata labels`).not.toMatch(
+    /^(?:Publication date|Source|Author\(s\)):/i
+  );
+}
+
 const describeLive = LIVE_RSS_ENABLED ? describe : describe.skip;
 
 describeLive("live RSS smoke tests", () => {
@@ -44,10 +51,12 @@ describeLive("live RSS smoke tests", () => {
         expect(firstPaper?.journal).toBeTruthy();
         expect(firstPaper?.title).toBeTruthy();
         expect(firstPaper?.url).toMatch(/^https?:\/\//);
+        expectNoMetadataOnlyAbstract(firstPaper?.abstract, target.family);
 
         results.push({
           family: target.family,
           journal: firstPaper?.journal ?? "",
+          abstract: Boolean(firstPaper?.abstract.trim()),
           date: Boolean(firstPaper?.publishedAt),
           authors: Boolean(firstPaper?.authors?.length),
           firstAffiliation: Boolean(firstPaper?.firstAffiliation)
@@ -59,4 +68,3 @@ describeLive("live RSS smoke tests", () => {
     60_000
   );
 });
-
