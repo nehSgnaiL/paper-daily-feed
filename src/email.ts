@@ -124,7 +124,7 @@ export function renderEmail(papers: RenderablePaper[]): string {
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8f4ff" style="width: 100%; background: #e8f4ff; border-collapse: collapse;">
       <tr>
         <td align="center" style="padding: 34px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
-          <table role="presentation" width="680" cellpadding="0" cellspacing="0" border="0" align="center" style="width: 100%; max-width: 680px; border-collapse: collapse;">
+          <table role="presentation" width="700" cellpadding="0" cellspacing="0" border="0" align="center" style="width: 100%; max-width: 800px; border-collapse: collapse;">
             <tr>
               <td align="center" style="padding: 10px 2px 26px 2px; text-align: center;">
                 <p style="margin: 0 0 8px 0; color: #007aff; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Research Bulletin</p>

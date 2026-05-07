@@ -1,3 +1,11 @@
+<p align="center">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="./docs/email_header_example-dark.svg" />
+    <source media="(prefers-color-scheme: light)" srcset="./docs/email_header_example.svg" />
+    <img alt="paper-daily-feed" src="./docs/email_header_example.svg" width="400"/>
+  </picture>
+</p>
+
 # paper-daily-feed
 [![Last Update](https://img.shields.io/github/last-commit/nehSgnaiL/paper-daily-feed?label=Last%20update&style=flat-square)](https://github.com/nehSgnaiL/paper-daily-feed)
 [![star](https://img.shields.io/github/stars/nehSgnaiL/paper-daily-feed?style=social)](https://github.com/nehSgnaiL/paper-daily-feed/stargazers)
@@ -5,7 +13,7 @@
 
 > The AI era's paper bloom is exhausting to track. If you are tired of endlessly chasing new publications, use this repository to curate a daily recommendation & summary tailored exactly to your vibe.
 
-The recommendation can be produced via two sources (enable either one or both):
+The recommendation can be produced based on two sources (enable either one or both):
 
 - Interest profile: describe your research area directly in text.
 - Zotero library: use papers and abstracts in Zotero library.
@@ -16,6 +24,9 @@ The recommendation can be produced via two sources (enable either one or both):
     <source media="(prefers-color-scheme: light)" srcset="./docs/email_render_example.svg" />
     <img alt="paper-daily-feed" src="./docs/email_render_example.svg" width="600"/>
   </picture>
+</p>
+<p align = "center">
+<b>Fig. 1</b>. Preview for daily feeds.
 </p>
 
 ## Get started
@@ -32,8 +43,8 @@ Go to your GitHub repository → **Settings** → **Secrets and variables** → 
 | Key | Description | Example |
 | --- | --- | --- |
 | `RECEIVER` | `Required` Email address for receiving recommendations. | `reader@example.com` |
-| `SENDER` | `Required` Email account used to send recommendations via SMTP server. | `example@qq.com` |
-| `SENDER_PASSWORD` | `Required` Sender account password or SMTP authentication code. | `app-password-or-token` |
+| `SENDER` | `Required` Email account used to send recommendations via SMTP server. Suggest using a dedicated/secondary email account. | `example@qq.com` |
+| `SENDER_PASSWORD` | `Required` Corresponding sender account password or SMTP authentication code. | `app-password-or-token` |
 | `SMTP_SERVER` | `Required` SMTP server of the sender account. Get to know SMTP in [English](https://developers.google.com/workspace/gmail/imap/imap-smtp) / [Chinese](https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authorizationCode). | `smtp.example.com` |
 | `SMTP_PORT` | `Required` Corresponding SMTP server port. | `465` |
 | `OPENAI_BASE_URL` | `Recommended` OpenAI-compatible LLM API used for summarying paper. <br>If the API is not set, the summary of recommended papers will be the corresponding abstract. <br>You can get FREE API in [SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU) for using open source LLMs (e.g., `Qwen/Qwen3-8B`). | `https://api.siliconflow.cn/v1` |
