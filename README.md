@@ -126,6 +126,7 @@ Next, we need to add your configuration settings. Because this isn't sensitive d
 > [!TIP]
 > **Customizing your sources:** 
 > You can enable either one or both interest sources (your Textual profile and Zotero). The example above shows a minimal config. Just flip "enabled": `false` to `true` for whichever sources you want to use!
+> 
 > **More customizations:** See the [Customization](#customization) section.
 
 ### 4. Enable workflow & Done
