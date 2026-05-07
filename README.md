@@ -131,7 +131,7 @@ Because you forked this repository, GitHub automatically pauses automated tasks 
 
 <h2>Feedback</h2>
 
-Any issues, questions, or experience could be shared via [raising issue](https://github.com/nehSgnaiL/paper-daily-feed/issues/new) in the repository.
+Any issues, questions, or experience could be shared via [raising issue](https://github.com/nehSgnaiL/paper-daily-feed/issues/new/choose) in the repository.
 
 <h2>Customization</h2>
 
