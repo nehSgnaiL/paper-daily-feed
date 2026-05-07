@@ -139,12 +139,6 @@ Because you forked this repository, GitHub automatically pauses automated tasks 
 5. If everything goes smoothly ✅, the run will pass and you will receive a short recommendation email.
 6. **Done!** 😄 You will now get your automated daily emails. You can also manually trigger the [**Daily paper feeds**](../../actions/workflows/daily.yml) workflow anytime to get an instant update.
 
-> [!NOTE]
-> **Changing the daily email time:** 
-> By default, the system is scheduled to run at 06:11 UTC+8 (22:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 22 * * *`. 
-> 
-> To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ [**pencil icon**](../../edit/main/.github/workflows/daily.yml) in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
-
 > [!TIP]
 > **Keep your fork updated:**
 > The daily workflow checks whether your fork is behind [`nehSgnaiL/paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed). If it is behind, GitHub Actions will show a non-blocking **Sync fork reminder** so you can receive the latest features and bug fixes.
@@ -161,6 +155,7 @@ Any issues, questions, or experience could be shared via [raising issue](https:/
 > - You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
 > - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-secrets) will be read automatically.
 > - `APP_CONFIG` supports standard JSON plus JSONC comments (`//`, `/* ... */`, and `#`) and trailing commas.
+> - **Changing the daily email time:** By default, the system is scheduled to run at 06:11 UTC+8 (22:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 22 * * *`. To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ [**pencil icon**](../../edit/main/.github/workflows/daily.yml) in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
 
 This repo supports bundled catalog feeds and direct RSS feeds.
 
