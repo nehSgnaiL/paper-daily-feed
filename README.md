@@ -96,13 +96,37 @@ Next, we need to add your configuration settings. Because this isn't sensitive d
           // Optional: exclude papers from these path(s) in your Zotero library
           "excludeCollections": ["archive/**"]  
         }
-      }
+      },
+      "summary": {
+        // Optional: enable TLDR summary generation using LLM.
+        "enabled": false,
+        // Optional: Set your summary model if TLDR is enabled. Empty/omitted defaults to gpt-4o-mini.
+        "model": "Qwen/Qwen3-8B",
+        // Output language for TLDRs.
+        "language": "English",
+      },
+      "matching": {
+        // Number of recommended papers. 
+        "paperLimit": 10, 
+      },
+      "feeds": {
+        // Selected journal names or abbr. from data/journals.config.ts. Leave Empty to include all.
+        "catalogSelections": [],
+        // Optional: custom RSS feeds with name and URL
+        "customRss": [
+          // {
+          //   "name": "Example Lab Feed",
+          //   "rss": "https://example.test/feed.xml"
+          // },
+        ]
+      },
     }
     ```
 
 > [!TIP]
 > **Customizing your sources:** 
 > You can enable either one or both interest sources (your Textual profile and Zotero). The example above shows a minimal config. Just flip "enabled": `false` to `true` for whichever sources you want to use!
+> **More customizations:** See the [Customization](#customization) section.
 
 ### 4. Enable workflow & Done
 
@@ -131,7 +155,7 @@ Because you forked this repository, GitHub automatically pauses automated tasks 
 
 Any issues, questions, or experience could be shared via [raising issue](https://github.com/nehSgnaiL/paper-daily-feed/issues/new/choose) in the repository.
 
-<h2>Customization</h2>
+<h2 id="customization">Customization</h2>
 
 > [!TIP]
 > - You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
