@@ -158,29 +158,6 @@ Any issues, questions, or experience could be shared via [raising issue](https:/
 > - `APP_CONFIG` supports standard JSON plus JSONC comments (`//`, `/* ... */`, and `#`) and trailing commas.
 > - **Changing the daily email time:** By default, the system is scheduled to run at 06:11 UTC+8 (22:11 UTC). This schedule is set using a format called `cron` which looks like this: `11 22 * * *`. To change the time, click on this file: [`.github/workflows/daily.yml`](./.github/workflows/daily.yml), click the ✏️ [**pencil icon**](../../edit/main/.github/workflows/daily.yml) in the top right to edit it, and change the cron numbers. You can use a free tool like [crontab.guru](https://crontab.guru/) to help translate your desired time into the `cron` format.
 
-This repo supports bundled catalog feeds and direct RSS feeds.
-
-- Catalog feeds: `feeds.catalogSelections`: names or abbreviations from [`data/journals.config.ts`](./data/journals.config.ts); empty means all bundled feeds.
-- Custom feeds: `feeds.customRss`: direct RSS entries with `name` and `rss`.
-
-**Example `APP_CONFIG` for Custom Feeds:**
-```json5
-{
-  // ... other config parameters ...
-  "feeds": {
-    // selected bundled feeds by name or abbreviation; empty means all
-    "catalogSelections": ["nature", "science"],
-    // custom RSS feeds with name and URL
-    "customRss": [
-      {
-        "name": "MIT Technology Review",
-        "rss": "https://www.technologyreview.com/feed/"
-      }
-    ]
-  }
-}
-```
-
 <h2>Local Run</h2>
 
 Local setup is optional. Use it only if you want to preview or customize the feed on your local device.
