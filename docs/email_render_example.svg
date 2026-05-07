@@ -1,7 +1,7 @@
-<svg width="800" height="310" viewBox="0 0 800 310" xmlns="http://www.w3.org/2000/svg">
-  <foreignObject x="0" y="0" width="800" height="310">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="width:800px;height:310px;box-sizing:border-box;background:#e8f4ff;padding:24px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;">
-      <article style="background:#ffffff;border:1px solid #d9ebff;border-radius:18px;padding:24px;box-shadow:0 8px 24px rgba(0,122,255,0.08);box-sizing:border-box;width:100%;">
+<svg width="800" height="262" viewBox="0 0 800 262" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject x="0" y="0" width="800" height="262">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="width:800px;height:262px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;">
+      <article style="background:#ffffff;border:1px solid #d9ebff;border-radius:18px;padding:24px;box-shadow:0 8px 24px rgba(0,122,255,0.08);box-sizing:border-box;width:100%;height:100%;">
         <p style="margin:0 0 8px;color:#007aff;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Travel Behaviour and Society · 2026-01-01</p>
 
         <h2 style="font-size:24px;line-height:1.24;margin:0 0 12px;color:#1d1d1f;letter-spacing:0;">
@@ -12,7 +12,7 @@
 
         <p style="margin:0 0 8px;color:#424245;font-size:14px;line-height:1.45;">Shen Liang, Yang Xu, Guangyue Li, Xiaohu Zhang, Qiuping Li</p>
 
-        <p style="display:inline-block;margin:0;padding:8px 13px;border-radius:999px;background:#007aff;color:#ffffff;font-size:13px;font-weight:700;box-shadow:0 4px 12px rgba(0,122,255,0.24);">
+        <p style="display:inline-block;margin:0;padding:8px 13px;border-radius:999px;background:#007aff;color:#ffffff;font-size:13px;font-weight:700;">
           Recommendation score: 57.9%
         </p>
 

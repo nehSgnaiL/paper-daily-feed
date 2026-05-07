@@ -1,9 +1,11 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="./docs/email_header_example-dark.svg" />
-    <source media="(prefers-color-scheme: light)" srcset="./docs/email_header_example.svg" />
-    <img alt="paper-daily-feed" src="./docs/email_header_example.svg" width="400"/>
-  </picture>
+  <a href="https://github.com/nehSgnaiL/paper-daily-feed" target="_blank" rel="noopener noreferrer">
+    <picture>
+      <source media="(prefers-color-scheme: dark)" srcset="./docs/email_header_example-dark.svg" />
+      <source media="(prefers-color-scheme: light)" srcset="./docs/email_header_example.svg" />
+      <img alt="paper-daily-feed" src="./docs/email_header_example.svg" width="550"/>
+    </picture>
+  </a>
 </p>
 
 # paper-daily-feed
@@ -22,7 +24,7 @@ The recommendation can be produced based on two sources (enable either one or bo
   <picture>
     <source media="(prefers-color-scheme: dark)" srcset="./docs/email_render_example-dark.svg" />
     <source media="(prefers-color-scheme: light)" srcset="./docs/email_render_example.svg" />
-    <img alt="paper-daily-feed" src="./docs/email_render_example.svg" width="600"/>
+    <img alt="paper-daily-feed" src="./docs/email_render_example.svg" width="650"/>
   </picture>
 </p>
 <p align = "center">
