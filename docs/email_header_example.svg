@@ -1,10 +1,31 @@
-<svg width="640" height="252" viewBox="0 0 640 252" xmlns="http://www.w3.org/2000/svg">
-  <foreignObject x="0" y="0" width="640" height="252">
-    <div xmlns="http://www.w3.org/1999/xhtml" style="width:640px;height:252px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;">
-      <div style="width:100%;height:100%;box-sizing:border-box;border-radius:28px;background:#ffffff;border:1px solid #d9ebff;box-shadow:0 8px 24px rgba(0,122,255,0.08);display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;">
-        <p style="margin:0 0 10px;color:#007aff;font-size:13px;font-weight:700;letter-spacing:0.12em;text-transform:uppercase;">Research Bulletin</p>
-        <h1 style="margin:0;color:#007aff;font-size:42px;line-height:1.12;font-weight:800;letter-spacing:0;">Daily paper feeds</h1>
-        <p style="margin:14px 0 0;color:#6e6e73;font-size:16px;line-height:1.5;">A recommendation of papers based on your research interests.</p>
+<svg width="640" height="220" viewBox="0 0 640 220" xmlns="http://www.w3.org/2000/svg">
+  <foreignObject x="0" y="0" width="640" height="220">
+    <div xmlns="http://www.w3.org/1999/xhtml" style="width:640px;height:220px;font-family:-apple-system,BlinkMacSystemFont,'SF Pro Text','Helvetica Neue',Arial,sans-serif;">
+      
+      <div style="width:100%;height:100%;box-sizing:border-box;border-radius:30px;background:linear-gradient(135deg,#f7fbff 0%,#edf6ff 100%);display:flex;align-items:center;padding:38px 44px;gap:28px;">
+        
+        <div style="width:72px;height:72px;border-radius:22px;background:linear-gradient(135deg,#007aff 0%,#4da3ff 100%);display:flex;align-items:center;justify-content:center;box-shadow:0 10px 30px rgba(0,122,255,0.20);flex-shrink:0;">
+          
+          <svg width="38" height="38" viewBox="0 0 38 38" fill="none" xmlns="http://www.w3.org/2000/svg">
+            <line x1="10" y1="28" x2="19" y2="11" stroke="white" stroke-width="2.6" stroke-linecap="round"></line>
+            <line x1="19" y1="11" x2="29" y2="24" stroke="white" stroke-width="2.6" stroke-linecap="round"></line>
+            <circle cx="10" cy="28" r="4.2" fill="white"></circle>
+            <circle cx="19" cy="11" r="4.2" fill="white"></circle>
+            <circle cx="29" cy="24" r="4.2" fill="white"></circle>
+          </svg>
+
+        </div>
+
+        <div style="display:flex;flex-direction:column;">
+          <h1 style="margin:0;color:#007aff;font-size:46px;line-height:1.05;font-weight:800;letter-spacing:-0.04em;">
+            Daily paper feeds
+          </h1>
+
+          <p style="margin:14px 0 0;color:#6e6e73;font-size:16px;line-height:1.55;">
+            A recommendation of papers based on your research interests.
+          </p>
+        </div>
+
       </div>
     </div>
   </foreignObject>

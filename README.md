@@ -3,7 +3,7 @@
     <picture>
       <source media="(prefers-color-scheme: dark)" srcset="./docs/email_header_example-dark.svg" />
       <source media="(prefers-color-scheme: light)" srcset="./docs/email_header_example.svg" />
-      <img alt="paper-daily-feed" src="./docs/email_header_example.svg" width="550"/>
+      <img alt="paper-daily-feed" src="./docs/email_header_example.svg" width="700"/>
     </picture>
   </a>
 </p>
