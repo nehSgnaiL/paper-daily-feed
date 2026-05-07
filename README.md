@@ -19,6 +19,8 @@
 
 <h1>paper-daily-feed</h1>
 
+[English](./README.md) | [简体中文](./README.zh-CN.md)
+
 > The AI era's paper boom is exhausting to track. Stop endlessly chasing new papers, and let [`paper-daily-feed`](https://github.com/nehSgnaiL/paper-daily-feed) curate daily summaries personalized for your vibe.
 
 **Smart daily feeds** tailored to your research interests or Zotero library. Get the latest, most relevant papers **delivered straight to your inbox**. 100% cloud-based, **free**, **no installs**, and quick to set up.
@@ -75,7 +77,7 @@ Next, we need to add your configuration settings. Because this isn't sensitive d
 1. Go to your repository's [Actions Variables page](../../settings/variables/actions) (or manually navigate to **Settings ⚙️** → **Secrets and variables** → **Actions**, and make sure to click the **Variables** tab).
 2. Click the green **New repository variable** button.
 3. For the **Name**, type exactly: `APP_CONFIG`
-4. For the **Value**, paste your configuration (like the example below) in JSON format.
+4. For the **Value**, paste your configuration (like the example below) in JSONC format.
    
    **Example `APP_CONFIG` value:**
 
@@ -130,6 +132,7 @@ Any issues, questions, or experience could be shared via [raising issue](https:/
 > [!TIP]
 > - You can add additional parameters by refering to full `APP_CONFIG` template in [`config/app.example.jsonc`](./config/app.example.jsonc) to achieve more customization.
 > - Keep passwords and API keys in GitHub Secrets, not directly in `APP_CONFIG`. The default secret names from [step 2](#2-create-secrets) will be read automatically.
+> - `APP_CONFIG` supports standard JSON plus JSONC comments (`//`, `/* ... */`, and `#`) and trailing commas.
 
 This repo supports bundled catalog feeds and direct RSS feeds.
 

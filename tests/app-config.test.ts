@@ -132,6 +132,27 @@ describe("loadAppConfig", () => {
     expect(config.matching.paperLimit).toBe(4);
   });
 
+  it("loads JSONC comments and trailing commas from the APP_CONFIG environment variable", () => {
+    const config = loadAppConfig({
+      APP_CONFIG: `{
+        // GitHub Actions variables can contain JSONC comments.
+        "interests": {
+          "profile": {
+            "enabled": true,
+            "summary": "comment-friendly config",
+          },
+        },
+        "matching": {
+          "paperLimit": 6,
+        },
+      }`
+    });
+
+    expect(config.interests.profile.enabled).toBe(true);
+    expect(config.interests.profile.summary).toBe("comment-friendly config");
+    expect(config.matching.paperLimit).toBe(6);
+  });
+
   it("keeps .env.example focused on environment variables", () => {
     const parsedEnv = parseDotenv(readFileSync(".env.example"));
 
