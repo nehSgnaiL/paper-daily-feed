@@ -6,6 +6,7 @@
   "scripts": {
     "build": "tsc --noEmit",
     "test": "vitest run",
+    "test:email": "vitest run tests/email.test.ts",
     "test:feeds:live": "node scripts/run-live-feed-tests.mjs",
     "start": "tsx src/index.ts",
     "preview-email": "tsx src/index.ts preview-email",

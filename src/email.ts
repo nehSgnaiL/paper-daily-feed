@@ -3,6 +3,8 @@ import type { DeliveryConfig } from "./app-config.js";
 import type { RecommendedPaper } from "./types.js";
 
 const ABSTRACT_EXCERPT_LIMIT = 280;
+const EMAIL_PREHEADER = "Daily paper recommendations selected for your research interests.";
+const EMAIL_WIDTH = 600;
 
 type RenderablePaper = Omit<RecommendedPaper, "matchContext"> & {
   matchContext?: RecommendedPaper["matchContext"];
@@ -119,12 +121,20 @@ export function renderEmail(papers: RenderablePaper[]): string {
       : papers.map(renderPaper).join("\n");
 
   return `<!doctype html>
-<html>
-  <body style="margin: 0; padding: 0; background: #e8f4ff;">
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="x-apple-disable-message-reformatting">
+    <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
+    <title>Daily paper feeds</title>
+  </head>
+  <body bgcolor="#e8f4ff" style="margin: 0; padding: 0; background: #e8f4ff;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; mso-hide: all;">${EMAIL_PREHEADER}</div>
     <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8f4ff" style="width: 100%; background: #e8f4ff; border-collapse: collapse;">
       <tr>
         <td align="center" style="padding: 34px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
-          <table role="presentation" width="700" cellpadding="0" cellspacing="0" border="0" align="center" style="width: 100%; max-width: 800px; border-collapse: collapse;">
+          <table role="presentation" width="${EMAIL_WIDTH}" cellpadding="0" cellspacing="0" border="0" align="center" style="width: 100%; max-width: ${EMAIL_WIDTH}px; border-collapse: collapse;">
             <tr>
               <td align="center" style="padding: 10px 2px 26px 2px; text-align: center;">
                 <p style="margin: 0 0 8px 0; color: #007aff; font-size: 12px; font-weight: 700; letter-spacing: 0.12em; text-transform: uppercase;">Research Bulletin</p>

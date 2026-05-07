@@ -44,4 +44,16 @@ jobs:
           RECEIVER: ${{ secrets.RECEIVER }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-        run: npm start -- preview-email
+        run: |
+          mkdir -p generated
+          npm start -- preview-email | tee generated/preview-email.log
+          sed -n '/^<!doctype html>/,$p' generated/preview-email.log > generated/email.html
+          test -s generated/email.html
+
+      - name: Upload generated email
+        uses: actions/upload-artifact@v6
+        with:
+          name: generated-email
+          path: |
+            generated/email.html
+            generated/preview-email.log

@@ -40,18 +40,22 @@ export function normalizeZoteroItem(item: ZoteroItem): CorpusPaper | null {
   return { title, abstract, paths: item.paths ?? [] };
 }
 
-export function normalizeZoteroInterestDocument(item: ZoteroItem): InterestDocument | null {
-  const paper = normalizeZoteroItem(item);
-  if (!paper) {
-    return null;
-  }
-
+export function zoteroCorpusPaperToInterestDocument(paper: CorpusPaper): InterestDocument {
   return {
     source: "zotero",
     title: paper.title,
     text: [`Title: ${paper.title}`, `Abstract: ${paper.abstract}`].join("\n"),
     topics: []
   };
+}
+
+export function normalizeZoteroInterestDocument(item: ZoteroItem): InterestDocument | null {
+  const paper = normalizeZoteroItem(item);
+  if (!paper) {
+    return null;
+  }
+
+  return zoteroCorpusPaperToInterestDocument(paper);
 }
 
 function globToRegExp(pattern: string): RegExp {
@@ -189,10 +193,7 @@ export async function fetchZoteroInterestDocuments(
     )
     .filter((paper): paper is CorpusPaper => paper !== null);
 
-  return filterCorpusByPath(corpus, config.includeCollections, config.excludeCollections).map((paper) => ({
-    source: "zotero",
-    title: paper.title,
-    text: [`Title: ${paper.title}`, `Abstract: ${paper.abstract}`].join("\n"),
-    topics: []
-  }));
+  return filterCorpusByPath(corpus, config.includeCollections, config.excludeCollections).map(
+    zoteroCorpusPaperToInterestDocument
+  );
 }

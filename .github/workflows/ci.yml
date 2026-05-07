@@ -32,6 +32,9 @@ jobs:
       - name: Typecheck
         run: npm run build
 
+      - name: Email render compatibility tests
+        run: npm run test:email
+
       - name: Test
         run: npm test
 
