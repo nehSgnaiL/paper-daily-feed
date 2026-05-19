@@ -43,7 +43,7 @@
 - [1. Fork 仓库](#1-fork-仓库)
 - [2. 创建 Secrets](#2-创建-secrets)
 - [3. 创建变量](#3-创建变量)
-- [4. 启用工作流并完成](#4-启用工作流并完成)
+- [4. 启用工作流并完成！](#4-启用工作流并完成)
 
 ### 1. Fork 仓库
 
@@ -60,29 +60,17 @@
 2. 保持在 **Secrets** 标签页。
 3. 点击 **New repository secret**，按需添加下方凭据：
 
-<h4><i>Email</i></h4>
-
-| Secret 名称 | 示例值 | 说明 | 备注 |
+| 备注 | Secret 名称 | 示例值 | 说明 |
 | --- | --- | --- | --- |
-| `RECEIVER` | `reader@example.com` | 接收论文推送的邮箱。 | :email:`必填` |
-| `SENDER` | `example@qq.com` | 发送论文推送的邮箱。建议使用专用邮箱或备用邮箱。 | :email:`必填` |
-| `SENDER_PASSWORD` | `app-password-or-token` | 发件邮箱**密码、APP Password 或授权码**。<br><br>很多邮箱服务商要求应用密码：[QQ 邮箱](https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authorizationCode)、[Gmail](https://developers.google.com/workspace/gmail/imap/imap-smtp)、[163 邮箱](https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac2a5feb28b66796d3b)、[Outlook](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-for-outlook-com-d088b986-291d-42b8-9564-9c414e2aa040)。 | :email:`必填` |
-| `SMTP_SERVER` | `smtp.example.com` | SMTP 服务器地址。参考上方文档。 | :email:`必填` |
-| `SMTP_PORT` | `465` | SMTP 服务器端口。参考上方文档。 | :email:`必填` |
-
-<h4><i>Zotero</i></h4>
-
-| Secret 名称 | 示例值 | 说明 | 备注 |
-| --- | --- | --- | --- |
-| `ZOTERO_ID` | `1234567` | 使用 Zotero 文库时填写。<br><br>在 [Zotero Settings](https://www.zotero.org/settings/security#applications) 的 `Create new private key` 下方找到。见 [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-1-locate-zotero-settings)。 | :closed_book:`推荐` |
-| `ZOTERO_KEY` | `zotero-api-key` | Zotero API key。<br><br>在 [Zotero Settings](https://www.zotero.org/settings/security#applications) 创建至少有 Read 权限的新 key。见 [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-2-create-a-key)。 | :closed_book:`推荐` |
-
-<h4><i>TLDR Summary</i></h4>
-
-| Secret 名称 | 示例值 | 说明 | 备注 |
-| --- | --- | --- | --- |
-| `OPENAI_BASE_URL` | `https://api.siliconflow.cn/v1` | TLDR 摘要 API 地址。留空则使用论文原始摘要。<br><br>*提示：[SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU) 可获取免费 API，用于开源模型，例如 `Qwen/Qwen3-8B`。* | :robot:`推荐` |
-| `OPENAI_API_KEY` | `sk-...` | 使用 TLDR 摘要 API 时填写对应 API key。 | :robot:`推荐` |
+| :email:`必填` | `RECEIVER` | `reader@example.com` | 接收论文推送的邮箱。 |
+| :email:`必填` | `SENDER` | `example@qq.com` | 发送论文推送的邮箱。建议使用专用邮箱或备用邮箱。 |
+| :email:`必填` | `SENDER_PASSWORD` | `app-password-or-token` | 发件邮箱**密码、APP Password 或授权码**。<br><br>很多邮箱服务商要求应用密码：[QQ 邮箱](https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authorizationCode)、[Gmail](https://developers.google.com/workspace/gmail/imap/imap-smtp)、[163 邮箱](https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac2a5feb28b66796d3b)、[Outlook](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-for-outlook-com-d088b986-291d-42b8-9564-9c414e2aa040)。 |
+| :email:`必填` | `SMTP_SERVER` | `smtp.example.com` | SMTP 服务器地址。参考上方文档。 |
+| :email:`必填` | `SMTP_PORT` | `465` | SMTP 服务器端口。参考上方文档。 |
+| :closed_book:`推荐` | `ZOTERO_ID` | `1234567` | 使用 Zotero 文库时填写。<br><br>在 [Zotero Settings](https://www.zotero.org/settings/security#applications) 的 `Create new private key` 下方找到。见 [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-1-locate-zotero-settings)。 |
+| :closed_book:`推荐` | `ZOTERO_KEY` | `zotero-api-key` | Zotero API key。<br><br>在 [Zotero Settings](https://www.zotero.org/settings/security#applications) 创建至少有 Read 权限的新 key。见 [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-2-create-a-key)。 |
+| :robot:`推荐` | `OPENAI_BASE_URL` | `https://api.siliconflow.cn/v1` | TLDR 摘要 API 地址。留空则使用论文原始摘要。<br><br>*提示：[SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU) 可获取免费 API，用于开源模型，例如 `Qwen/Qwen3-8B`。* |
+| :robot:`推荐` | `OPENAI_API_KEY` | `sk-...` | 使用 TLDR 摘要 API 时填写对应 API key。 |
 
 
 ### 3. 创建变量
@@ -148,7 +136,7 @@
 > 
 > **需要更多选项？** 见 [自定义](#customization) 部分的高级设置。
 
-### 4. 启用工作流并完成
+### 4. 启用工作流并完成！
 
 GitHub 默认暂停 fork 仓库中的工作流。启用它们：
 

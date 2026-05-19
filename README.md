@@ -43,7 +43,7 @@ Setup takes a few minutes on GitHub: fork, add credentials, enable workflows.
 - [1. Fork the repository](#1-fork-the-repository)
 - [2. Create Secrets](#2-create-secrets)
 - [3. Create Variable](#3-create-variable)
-- [4. Enable workflow \& Done](#4-enable-workflow--done)
+- [4. Enable workflow \& Done!](#4-enable-workflow--done)
 
 ### 1. Fork the repository
 
@@ -60,29 +60,17 @@ Email, AI, and Zotero need passwords or API keys. Store them as GitHub **Secrets
 2. Stay on the **Secrets** tab.
 3. Click **New repository secret**, then add what you need below:
 
-<h4><i>Email</i></h4>
-
-| Secret Name | Example of Secret Value | Description | Note |
+| Note | Secret Name | Example of Secret Value | Description |
 | --- | --- | --- | --- |
-| `RECEIVER` | `reader@example.com` | Email address that **receives** feeds. | :email:`Required` |
-| `SENDER` | `example@qq.com` | Email account that **sends** feeds. A dedicated/secondary account is recommended. | :email:`Required` |
-| `SENDER_PASSWORD` | `app-password-or-token` | Sender email **password, app password, or auth code**.<br><br>Many providers require an app password: [QQ Mail](https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authorizationCode), [Gmail](https://developers.google.com/workspace/gmail/imap/imap-smtp), [163 Mail](https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac2a5feb28b66796d3b), [Outlook](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-for-outlook-com-d088b986-291d-42b8-9564-9c414e2aa040). | :email:`Required` |
-| `SMTP_SERVER` | `smtp.example.com` | SMTP server. Check your provider docs above. | :email:`Required` |
-| `SMTP_PORT` | `465` | SMTP port. Check your provider docs above. | :email:`Required` |
-
-<h4><i>Zotero</i></h4>
-
-| Secret Name | Example of Secret Value | Description | Note |
-| --- | --- | --- | --- |
-| `ZOTERO_ID` | `1234567` | Set when using Zotero Library.<br><br>Find it below `Create new private key` in [Zotero Settings](https://www.zotero.org/settings/security#applications). See [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-1-locate-zotero-settings). | :closed_book:`Recommended` |
-| `ZOTERO_KEY` | `zotero-api-key` | Zotero API key.<br><br>Create a new key with at least Read access in [Zotero Settings](https://www.zotero.org/settings/security#applications). See [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-2-create-a-key). | :closed_book:`Recommended` |
-
-<h4><i>TLDR Summary</i></h4>
-
-| Secret Name | Example of Secret Value | Description | Note |
-| --- | --- | --- | --- |
-| `OPENAI_BASE_URL` | `https://api.siliconflow.cn/v1` | AI API base URL for TLDR summaries. Blank = use original abstracts.<br><br>*Tip: [SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU) has free API access for open source LLMs, e.g. `Qwen/Qwen3-8B`.* | :robot:`Recommended` |
-| `OPENAI_API_KEY` | `sk-...` | API key for TLDR summaries. | :robot:`Recommended` |
+| :email:`Required` | `RECEIVER` | `reader@example.com` | Email address that **receives** feeds. |
+| :email:`Required` | `SENDER` | `example@qq.com` | Email account that **sends** feeds. A dedicated/secondary account is recommended. |
+| :email:`Required` | `SENDER_PASSWORD` | `app-password-or-token` | Sender email **password, app password, or auth code**.<br><br>Many providers require an app password: [QQ Mail](https://wx.mail.qq.com/list/readtemplate?name=app_intro.html#/agreement/authorizationCode), [Gmail](https://developers.google.com/workspace/gmail/imap/imap-smtp), [163 Mail](https://help.mail.163.com/faqDetail.do?code=d7a5dc8471cd0c0e8b4b8f4f8e49998b374173cfe9171305fa1ce630d7f67ac2a5feb28b66796d3b), [Outlook](https://support.microsoft.com/en-us/office/pop-imap-and-smtp-settings-for-outlook-com-d088b986-291d-42b8-9564-9c414e2aa040). |
+| :email:`Required` | `SMTP_SERVER` | `smtp.example.com` | SMTP server. Check your provider docs above. |
+| :email:`Required` | `SMTP_PORT` | `465` | SMTP port. Check your provider docs above. |
+| :closed_book:`Recommended` | `ZOTERO_ID` | `1234567` | Set when using Zotero Library.<br><br>Find it below `Create new private key` in [Zotero Settings](https://www.zotero.org/settings/security#applications). See [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-1-locate-zotero-settings). |
+| :closed_book:`Recommended` | `ZOTERO_KEY` | `zotero-api-key` | Zotero API key.<br><br>Create a new key with at least Read access in [Zotero Settings](https://www.zotero.org/settings/security#applications). See [Zotero API Key Guide](https://oeysan.github.io/c2z/articles/zotero_api.html#step-2-create-a-key). |
+| :robot:`Recommended` | `OPENAI_BASE_URL` | `https://api.siliconflow.cn/v1` | AI API base URL for TLDR summaries. Blank = use original abstracts.<br><br>*Tip: [SiliconFlow](https://cloud.siliconflow.cn/i/p9BtMTtU) has free API access for open source LLMs, e.g. `Qwen/Qwen3-8B`.* |
+| :robot:`Recommended` | `OPENAI_API_KEY` | `sk-...` | API key for TLDR summaries. |
 
 ### 3. Create Variable
 
@@ -147,7 +135,7 @@ Add app settings as a **Variable**, not a Secret.
 > 
 > **Need more options?** See the [Customization](#customization) section for advanced settings.
 
-### 4. Enable workflow & Done
+### 4. Enable workflow & Done!
 
 GitHub pauses workflows in forked repos by default. Enable them:
 
