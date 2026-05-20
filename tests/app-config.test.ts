@@ -270,7 +270,9 @@ describe("loadAppConfig", () => {
         },
         paperLimit: 10,
         maxPaperAgeDays: 90,
-        minScore: 0.35
+        minScore: 0.35,
+        clusterSimilarityThreshold: 0.7,
+        avoidPenaltyWeight: 0.35
       },
       metadataRepair: {
         enabled: false,

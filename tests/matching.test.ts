@@ -32,7 +32,9 @@ const matchingConfig: MatchingConfig = {
   },
   paperLimit: 10,
   maxPaperAgeDays: 7,
-  minScore: 0.35
+  minScore: 0.35,
+  clusterSimilarityThreshold: 0.7,
+  avoidPenaltyWeight: 0.35
 };
 
 const candidate = (title: string, abstract: string, url = `https://example.test/${title}`) => ({
@@ -175,6 +177,92 @@ describe("rankPapers", () => {
     );
 
     expect(ranked.map((paper) => paper.title)).toEqual(["Strong match"]);
+  });
+
+  it("selects across interest clusters before filling remaining slots by score", async () => {
+    const ranked = await rankPapers(
+      { ...matchingConfig, paperLimit: 3, minScore: 0, clusterSimilarityThreshold: 0.8 },
+      [
+        candidate("Strong transport", "Transit equity."),
+        candidate("Second transport", "Bus access."),
+        candidate("Climate paper", "Heat adaptation."),
+        candidate("Weak policy", "Urban policy.")
+      ],
+      [
+        interest("Transport", "Transit access.", ["transport"]),
+        interest("Climate", "Heat resilience.", ["climate"])
+      ],
+      {},
+      async () => [
+        [1, 0],
+        [0.9, 0.1],
+        [0, 1],
+        [0.55, 0.45],
+        [1, 0],
+        [0, 1]
+      ]
+    );
+
+    expect(ranked.map((paper) => paper.title)).toEqual(["Strong transport", "Climate paper", "Second transport"]);
+  });
+
+  it("penalizes papers that match negative interest atoms", async () => {
+    const ranked = await rankPapers(
+      { ...matchingConfig, minScore: 0, avoidPenaltyWeight: 0.5 },
+      [
+        candidate("Desired method", "Useful representation learning."),
+        candidate("Avoided benchmark", "Protein folding benchmark.")
+      ],
+      [
+        interest("Representation learning", "Representation learning.", ["representation"]),
+        {
+          ...interest("Protein folding", "Protein folding.", ["protein folding"]),
+          polarity: "negative"
+        }
+      ],
+      {},
+      async () => [
+        [1, 0],
+        [0.8, 0.6],
+        [1, 0],
+        [0, 1]
+      ]
+    );
+
+    expect(ranked.map((paper) => paper.title)).toEqual(["Desired method", "Avoided benchmark"]);
+    expect(ranked[1].score).toBeCloseTo(0.62, 2);
+  });
+
+  it("weights configured profile atoms above Zotero paper atoms", async () => {
+    const ranked = await rankPapers(
+      { ...matchingConfig, minScore: 0 },
+      [
+        candidate("Profile topic paper", "Configured user topic."),
+        candidate("Zotero-only paper", "Library paper topic.")
+      ],
+      [
+        {
+          ...interest("Configured topic", "Configured user topic.", ["configured"]),
+          kind: "topic",
+          polarity: "positive"
+        },
+        {
+          ...interest("Library paper", "Library paper topic.", [], "zotero"),
+          kind: "zotero-paper",
+          polarity: "positive"
+        }
+      ],
+      {},
+      async () => [
+        [0.9, 0.1],
+        [0, 1],
+        [1, 0],
+        [0, 1]
+      ]
+    );
+
+    expect(ranked.map((paper) => paper.title)).toEqual(["Profile topic paper", "Zotero-only paper"]);
+    expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
   });
 });
 

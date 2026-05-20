@@ -21,11 +21,18 @@ export type FeedPaper = {
   metadataText?: string;
 };
 
+export type InterestPolarity = "positive" | "negative";
+
+export type InterestKind = "summary" | "topic" | "method" | "reference-paper" | "zotero-paper" | "favorite-journal";
+
 export type InterestDocument = {
   source: "profile" | "zotero" | "reference-paper";
   title: string;
   text: string;
   topics: string[];
+  kind?: InterestKind;
+  label?: string;
+  polarity?: InterestPolarity;
 };
 
 export type MatchContext = {

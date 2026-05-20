@@ -53,7 +53,7 @@ describe("buildProfileInterestDocuments", () => {
     expect(documents).toEqual([]);
   });
 
-  it("converts an enabled profile into one readable profile document", () => {
+  it("converts an enabled profile into atomic positive and negative interest documents", () => {
     const documents = buildProfileInterestDocuments(
       profileConfig({
         summary: "Urban analytics for equitable climate adaptation.",
@@ -67,15 +67,75 @@ describe("buildProfileInterestDocuments", () => {
     expect(documents).toEqual([
       {
         source: "profile",
-        title: "Interest profile",
-        text: [
-          "Summary: Urban analytics for equitable climate adaptation.",
-          "Topics: urban analytics, climate adaptation",
-          "Methods: causal inference, remote sensing",
-          "Favorite journals: Nature Cities, PNAS",
-          "Avoid topics: traffic prediction without policy relevance"
-        ].join("\n"),
-        topics: ["urban analytics", "climate adaptation"]
+        title: "Interest summary",
+        text: "Summary: Urban analytics for equitable climate adaptation.",
+        topics: ["urban analytics", "climate adaptation"],
+        kind: "summary",
+        label: "Interest summary",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "urban analytics",
+        text: "Topic: urban analytics",
+        topics: ["urban analytics"],
+        kind: "topic",
+        label: "urban analytics",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "climate adaptation",
+        text: "Topic: climate adaptation",
+        topics: ["climate adaptation"],
+        kind: "topic",
+        label: "climate adaptation",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "causal inference",
+        text: "Method: causal inference",
+        topics: ["urban analytics", "climate adaptation"],
+        kind: "method",
+        label: "causal inference",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "remote sensing",
+        text: "Method: remote sensing",
+        topics: ["urban analytics", "climate adaptation"],
+        kind: "method",
+        label: "remote sensing",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "Nature Cities",
+        text: "Favorite journal: Nature Cities",
+        topics: ["urban analytics", "climate adaptation"],
+        kind: "favorite-journal",
+        label: "Nature Cities",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "PNAS",
+        text: "Favorite journal: PNAS",
+        topics: ["urban analytics", "climate adaptation"],
+        kind: "favorite-journal",
+        label: "PNAS",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "traffic prediction without policy relevance",
+        text: "Avoid topic: traffic prediction without policy relevance",
+        topics: ["traffic prediction without policy relevance"],
+        kind: "topic",
+        label: "traffic prediction without policy relevance",
+        polarity: "negative"
       }
     ]);
   });
@@ -101,9 +161,21 @@ describe("buildProfileInterestDocuments", () => {
     expect(documents).toEqual([
       {
         source: "profile",
-        title: "Interest profile",
-        text: ["Summary: Foundation model applications.", "Topics: geospatial AI"].join("\n"),
-        topics: ["geospatial AI"]
+        title: "Interest summary",
+        text: "Summary: Foundation model applications.",
+        topics: ["geospatial AI"],
+        kind: "summary",
+        label: "Interest summary",
+        polarity: "positive"
+      },
+      {
+        source: "profile",
+        title: "geospatial AI",
+        text: "Topic: geospatial AI",
+        topics: ["geospatial AI"],
+        kind: "topic",
+        label: "geospatial AI",
+        polarity: "positive"
       },
       {
         source: "reference-paper",
@@ -113,13 +185,19 @@ describe("buildProfileInterestDocuments", () => {
           "Abstract: A survey of geospatial foundation models.",
           "Notes: Strong framing reference."
         ].join("\n"),
-        topics: ["geospatial AI"]
+        topics: ["geospatial AI"],
+        kind: "reference-paper",
+        label: "Foundation Models for Geospatial AI",
+        polarity: "positive"
       },
       {
         source: "reference-paper",
         title: "Title Only Reference",
         text: "Title: Title Only Reference",
-        topics: ["geospatial AI"]
+        topics: ["geospatial AI"],
+        kind: "reference-paper",
+        label: "Title Only Reference",
+        polarity: "positive"
       }
     ]);
   });
@@ -153,8 +231,8 @@ describe("buildInterestCorpus", () => {
       async () => zoteroDocuments
     );
 
-    expect(documents.map((document) => document.source)).toEqual(["profile", "reference-paper", "zotero"]);
-    expect(documents[2]).toBe(zoteroDocuments[0]);
+    expect(documents.map((document) => document.source)).toEqual(["profile", "profile", "reference-paper", "zotero"]);
+    expect(documents[3]).toBe(zoteroDocuments[0]);
   });
 
   it("does not fetch Zotero interest documents when Zotero is disabled", async () => {
@@ -180,6 +258,6 @@ describe("buildInterestCorpus", () => {
     );
 
     expect(fetchCalls).toBe(0);
-    expect(documents.map((document) => document.source)).toEqual(["profile"]);
+    expect(documents.map((document) => document.source)).toEqual(["profile", "profile"]);
   });
 });

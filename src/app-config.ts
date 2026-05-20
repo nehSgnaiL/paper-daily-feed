@@ -64,6 +64,8 @@ export type MatchingConfig = {
   paperLimit: number;
   maxPaperAgeDays: number;
   minScore: number;
+  clusterSimilarityThreshold: number;
+  avoidPenaltyWeight: number;
 };
 
 export type SummaryConfig = {
@@ -410,7 +412,15 @@ function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
       },
       paperLimit: asNumber(configOrEnv(matching.paperLimit, env, "PAPER_LIMIT"), 10),
       maxPaperAgeDays: asNumber(matching.maxPaperAgeDays, 90),
-      minScore: asNumberInRange(matching.minScore, 0.35, "matching.minScore", 0, 1)
+      minScore: asNumberInRange(matching.minScore, 0.35, "matching.minScore", 0, 1),
+      clusterSimilarityThreshold: asNumberInRange(
+        matching.clusterSimilarityThreshold,
+        0.7,
+        "matching.clusterSimilarityThreshold",
+        0,
+        1
+      ),
+      avoidPenaltyWeight: asNumberInRange(matching.avoidPenaltyWeight, 0.35, "matching.avoidPenaltyWeight", 0, 1)
     },
     metadataRepair: {
       enabled: asBoolean(metadataRepair.enabled, false),

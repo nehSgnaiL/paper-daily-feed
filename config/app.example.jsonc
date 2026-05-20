@@ -98,6 +98,10 @@
     "paperLimit": 10,
     // Can skip. Minimum recommendation score to send. Empty/omitted defaults to 0.35.
     "minScore": 0.35,
+    // Can skip. Interest atoms with similarity above this value are grouped into one cluster. Empty/omitted defaults to 0.7.
+    "clusterSimilarityThreshold": 0.7,
+    // Can skip. Penalty weight for papers matching avoidTopics. Empty/omitted defaults to 0.35.
+    "avoidPenaltyWeight": 0.35,
     // Can skip. Only consider feed papers this many days old. Empty/omitted defaults to 90.
     "maxPaperAgeDays": 90
   },

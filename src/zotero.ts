@@ -45,7 +45,10 @@ export function zoteroCorpusPaperToInterestDocument(paper: CorpusPaper): Interes
     source: "zotero",
     title: paper.title,
     text: [`Title: ${paper.title}`, `Abstract: ${paper.abstract}`].join("\n"),
-    topics: []
+    topics: [],
+    kind: "zotero-paper",
+    label: paper.title,
+    polarity: "positive"
   };
 }
 

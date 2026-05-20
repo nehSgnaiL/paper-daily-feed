@@ -90,7 +90,10 @@ describe("normalizeZoteroInterestDocument", () => {
         "Title: Urban mobility and climate adaptation",
         "Abstract: Public transit accessibility, climate adaptation, and cities."
       ].join("\n"),
-      topics: []
+      topics: [],
+      kind: "zotero-paper",
+      label: "Urban mobility and climate adaptation",
+      polarity: "positive"
     });
   });
 

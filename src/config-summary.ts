@@ -24,7 +24,7 @@ export function configSummaryLines(config: AppConfig): string[] {
     "Config summary:",
     `- interests: ${enabledInterestSources(config)}`,
     `- feeds: catalog=${config.feeds.catalogSelections.length || "all"}, customRss=${config.feeds.customRss.length}`,
-    `- matching: provider=${config.matching.provider}, active=${matching.active}, model=${matching.model}, paperLimit=${config.matching.paperLimit}, minScore=${config.matching.minScore}, maxPaperAgeDays=${config.matching.maxPaperAgeDays}`,
+    `- matching: provider=${config.matching.provider}, active=${matching.active}, model=${matching.model}, paperLimit=${config.matching.paperLimit}, minScore=${config.matching.minScore}, maxPaperAgeDays=${config.matching.maxPaperAgeDays}, clusterSimilarityThreshold=${config.matching.clusterSimilarityThreshold}, avoidPenaltyWeight=${config.matching.avoidPenaltyWeight}`,
     `- metadataRepair: enabled=${config.metadataRepair.enabled}, model=${config.metadataRepair.model}, timeoutMs=${config.metadataRepair.timeoutMs}`,
     `- summary: enabled=${config.summary.enabled}, model=${config.summary.model}, language=${config.summary.language}`,
     `- delivery: mode=${config.delivery.mode}, from=${config.delivery.from || "(empty)"}, to=${config.delivery.to || "(empty)"}, smtpHost=${config.delivery.smtpHost || "(empty)"}, smtpPort=${config.delivery.smtpPort}`,
