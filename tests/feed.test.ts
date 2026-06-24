@@ -256,10 +256,73 @@ describe("normalizeFeedItem", () => {
       expect.objectContaining({
         headers: expect.objectContaining({
           Accept: expect.stringContaining("application/rss+xml"),
-          "User-Agent": expect.stringContaining("paper-daily-feed")
+          "Accept-Language": "en-US,en;q=0.9",
+          "Cache-Control": "no-cache",
+          Connection: "keep-alive",
+          DNT: "1",
+          Pragma: "no-cache",
+          Priority: "u=0, i",
+          "Sec-Fetch-Dest": "document",
+          "Sec-Fetch-Mode": "navigate",
+          "Sec-Fetch-Site": "none",
+          "Sec-Fetch-User": "?1",
+          "Upgrade-Insecure-Requests": "1",
+          "User-Agent": expect.stringContaining("Mozilla/5.0")
         })
       })
     );
+  });
+
+  it("samples from multiple browser header profiles across RSS requests", async () => {
+    const fetchMock = vi.fn(async () => {
+      return new Response(
+        `<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Nature</title>
+            <item>
+              <title>Urban paper</title>
+              <link>https://example.test/paper</link>
+            </item>
+          </channel>
+        </rss>`,
+        {
+          status: 200,
+          headers: { "Content-Type": "application/rss+xml" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    await fetchJournalFeed({ name: "Nature", rss: "https://www.nature.com/nature.rss" });
+    await fetchJournalFeed({ name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" });
+
+    const calls = fetchMock.mock.calls as unknown as Array<[string, RequestInit]>;
+    const userAgents = calls.map((call) => {
+      const init = call[1];
+      return (init.headers as Record<string, string>)["User-Agent"];
+    });
+
+    expect(new Set(userAgents).size).toBeGreaterThan(1);
+  });
+
+  it("rejects HTML challenge pages before XML parsing", async () => {
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response("<!DOCTYPE html><html><title>Challenge</title></html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      })
+    );
+
+    await expect(
+      fetchJournalFeed({
+        name: "Nature Health",
+        rss: "https://www.nature.com/naturehealth.rss"
+      })
+    ).rejects.toThrow("Expected RSS/XML feed but received text/html");
   });
 
   it("uses feed source names as fetched paper labels", async () => {

@@ -39,10 +39,51 @@ const parser = new Parser<object, ParserItem>({
     ]
   }
 });
-const RSS_HEADERS = {
-  Accept: "application/rss+xml, application/xml, text/xml, */*",
-  "User-Agent": "paper-daily-feed/0.1 (+https://github.com/nehSgnaiL/paper-daily-feed)"
-};
+
+type RssHeaders = Record<string, string>;
+
+const RSS_COMMON_HEADERS = {
+  Accept: "application/rss+xml, application/rdf+xml, application/atom+xml, application/xml, text/xml, */*;q=0.8",
+  "Accept-Language": "en-US,en;q=0.9",
+  "Cache-Control": "no-cache",
+  Connection: "keep-alive",
+  DNT: "1",
+  Pragma: "no-cache",
+  Priority: "u=0, i",
+  "Sec-Fetch-Dest": "document",
+  "Sec-Fetch-Mode": "navigate",
+  "Sec-Fetch-Site": "none",
+  "Sec-Fetch-User": "?1",
+  "Upgrade-Insecure-Requests": "1"
+} satisfies RssHeaders;
+
+const RSS_BROWSER_HEADER_PROFILES: RssHeaders[] = [
+  {
+    "User-Agent":
+      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
+    "Sec-CH-UA": '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="99"',
+    "Sec-CH-UA-Mobile": "?0",
+    "Sec-CH-UA-Platform": '"Windows"'
+  },
+  {
+    "User-Agent":
+      "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
+  },
+  {
+    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
+  }
+];
+
+let rssHeaderProfileIndex = 0;
+
+function nextRssHeaders(): RssHeaders {
+  const profile = RSS_BROWSER_HEADER_PROFILES[rssHeaderProfileIndex % RSS_BROWSER_HEADER_PROFILES.length] ?? {};
+  rssHeaderProfileIndex += 1;
+  return {
+    ...RSS_COMMON_HEADERS,
+    ...profile
+  };
+}
 
 type FetchableFeed = Journal | FeedSource;
 
@@ -376,16 +417,30 @@ export function normalizeFeedItem(journal: string, item: ParserItem): FeedPaper 
   };
 }
 
+function looksLikeFeedXml(value: string): boolean {
+  return /^\s*(?:<\?xml\b[^>]*>\s*)?<(?:rss|rdf:RDF|feed)\b/i.test(value);
+}
+
+function isXmlContentType(contentType: string | null): boolean {
+  return Boolean(contentType?.toLowerCase().match(/\b(?:rss|rdf|atom|xml)\b/));
+}
+
 export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
   const response = await fetch(journal.rss, {
-    headers: RSS_HEADERS
+    headers: nextRssHeaders()
   });
 
   if (!response.ok) {
     throw new Error(`Status code ${response.status}`);
   }
 
-  const feed = await parser.parseString(await response.text());
+  const body = await response.text();
+  const contentType = response.headers.get("content-type");
+  if (!isXmlContentType(contentType) && !looksLikeFeedXml(body)) {
+    throw new Error(`Expected RSS/XML feed but received ${contentType ?? "unknown content type"}`);
+  }
+
+  const feed = await parser.parseString(body);
   return feed.items
     .map((item) => normalizeFeedItem(feedLabel(journal), item))
     .filter((paper): paper is FeedPaper => paper !== null);

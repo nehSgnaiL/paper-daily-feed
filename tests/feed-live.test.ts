@@ -15,6 +15,10 @@ const targets: PublisherSmokeTarget[] = [
   { family: "Science/AAAS", selection: "Science" },
   { family: "PNAS", selection: "PNAS" },
   { family: "Taylor & Francis", selection: "AAAG" },
+  { family: "Taylor & Francis", selection: "IJGIS" },
+  { family: "Taylor & Francis", selection: "Urban Geography" },
+  { family: "Taylor & Francis", selection: "Economic Geography" },
+  { family: "Taylor & Francis", selection: "IJDE" },
   { family: "ScienceDirect/Elsevier", selection: "CEUS" },
   { family: "Royal Society Publishing", selection: "Journal of The Royal Society Interface" },
   { family: "IEEE Xplore", selection: "IEEE T-ITS" }
