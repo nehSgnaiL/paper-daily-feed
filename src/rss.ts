@@ -99,8 +99,8 @@ type FetchJournalFeedsOptions = {
 };
 
 const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
-  minMs: 1_500,
-  maxMs: 4_500
+  minMs: 1_200,
+  maxMs: 2_500
 };
 const DEFAULT_RSS_RETRY_COUNT = 2;
 const DEFAULT_RSS_RETRY_DELAY_MS = 5_000;
