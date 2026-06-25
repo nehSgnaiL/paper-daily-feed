@@ -7,6 +7,7 @@ import {
 } from "../src/zotero.js";
 
 afterEach(() => {
+  vi.restoreAllMocks();
   vi.unstubAllGlobals();
 });
 
@@ -169,5 +170,51 @@ describe("fetchZoteroInterestDocuments", () => {
     ).resolves.toEqual([]);
 
     expect(fetchMock).not.toHaveBeenCalled();
+  });
+
+  it("logs Zotero pagination with progress bars when the API exposes totals", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = new URL(String(input));
+        const resource = url.pathname.endsWith("/items/top") ? "items/top" : "collections";
+        const start = Number(url.searchParams.get("start") ?? "0");
+
+        if (resource === "collections") {
+          return new Response(JSON.stringify([]), {
+            status: 200,
+            headers: { "Total-Results": "0" }
+          });
+        }
+
+        const pageItems = Array.from({ length: start === 0 ? 100 : 1 }, (_, index) => ({
+          data: {
+            itemType: "journalArticle",
+            title: `Paper ${start + index + 1}`,
+            abstractNote: "Urban mobility."
+          }
+        }));
+
+        return new Response(JSON.stringify(pageItems), {
+          status: 200,
+          headers: { "Total-Results": "101" }
+        });
+      })
+    );
+
+    await fetchZoteroInterestDocuments({
+      enabled: true,
+      userId: "123",
+      apiKey: "secret",
+      libraryType: "user",
+      includeCollections: [],
+      excludeCollections: []
+    });
+
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(logs).toContain("[Zotero collections] 1/1 [####################] 100%");
+    expect(logs).toContain("[Zotero items/top] 1/2 [##########----------] 50%");
+    expect(logs).toContain("[Zotero items/top] 2/2 [####################] 100%");
   });
 });

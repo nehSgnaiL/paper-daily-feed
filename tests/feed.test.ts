@@ -398,7 +398,9 @@ describe("normalizeFeedItem", () => {
 
     await fetchJournalFeeds(feeds, { delayMs: 0 });
 
-    expect(logSpy.mock.calls.flat().join("\n")).toMatch(
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(logs).not.toContain("[RSS] start");
+    expect(logs).toMatch(
       /\[RSS] 1\/20 \[#-------------------] 5% \| \d+\.\ds \| \[Springer] Nature: 1 papers/
     );
   });

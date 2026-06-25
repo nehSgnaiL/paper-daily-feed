@@ -26,6 +26,11 @@ type ZoteroLibraryConfig = {
   libraryType: "user" | "group";
 };
 
+type ZoteroPage<T> = {
+  items: T[];
+  totalResults?: number;
+};
+
 const SUPPORTED_ITEM_TYPES = new Set(["journalArticle", "conferencePaper", "preprint"]);
 
 export function normalizeZoteroItem(item: ZoteroItem): CorpusPaper | null {
@@ -111,7 +116,7 @@ function zoteroLibraryPath(config: ZoteroLibraryConfig): string {
   return `https://api.zotero.org/${libraryPath}/${config.userId}`;
 }
 
-async function fetchZoteroPage(config: ZoteroLibraryConfig, resource: string, start: number): Promise<unknown[]> {
+async function fetchZoteroPage<T>(config: ZoteroLibraryConfig, resource: string, start: number): Promise<ZoteroPage<T>> {
   const url = new URL(`${zoteroLibraryPath(config)}/${resource}`);
   url.searchParams.set("format", "json");
   url.searchParams.set("limit", "100");
@@ -127,16 +132,26 @@ async function fetchZoteroPage(config: ZoteroLibraryConfig, resource: string, st
     throw new Error(`Zotero API request failed (${response.status} ${response.statusText}).`);
   }
 
-  return (await response.json()) as unknown[];
+  const totalResultsHeader = response.headers.get("total-results");
+  const totalResults = totalResultsHeader === null ? undefined : Number(totalResultsHeader);
+  return {
+    items: (await response.json()) as T[],
+    ...(totalResults !== undefined && Number.isFinite(totalResults) ? { totalResults } : {})
+  };
 }
 
 async function fetchAllZoteroPages<T>(config: ZoteroLibraryConfig, resource: string): Promise<T[]> {
   const allItems: T[] = [];
   const pageSize = 100;
-  const progress = createProgress(`Zotero ${resource}`);
+  let progress: ReturnType<typeof createProgress> | undefined;
 
   for (let start = 0; ; start += pageSize) {
-    const items = (await fetchZoteroPage(config, resource, start)) as T[];
+    const page = await fetchZoteroPage<T>(config, resource, start);
+    const items = page.items;
+    if (!progress) {
+      const totalPages = page.totalResults === undefined ? undefined : Math.max(Math.ceil(page.totalResults / pageSize), 1);
+      progress = createProgress(`Zotero ${resource}`, totalPages === undefined ? {} : { total: totalPages });
+    }
     allItems.push(...items);
     progress.step(`page ${start / pageSize + 1}: ${items.length} items, ${allItems.length} total`);
     if (items.length < pageSize) {
@@ -144,7 +159,7 @@ async function fetchAllZoteroPages<T>(config: ZoteroLibraryConfig, resource: str
     }
   }
 
-  progress.done(`${allItems.length} total items`);
+  progress?.done(`${allItems.length} total items`);
   return allItems;
 }
 

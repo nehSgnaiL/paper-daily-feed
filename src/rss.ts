@@ -509,7 +509,6 @@ export async function fetchJournalFeeds(
     }
 
     const logLabel = feedLogLabel(journal);
-    console.log(`[RSS] start ${index + 1}/${journals.length}: ${logLabel}`);
 
     try {
       const feedPapers = await fetchJournalFeed(journal);
