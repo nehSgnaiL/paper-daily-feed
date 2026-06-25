@@ -89,12 +89,39 @@ type FetchableFeed = Journal | FeedSource;
 
 type FetchJournalFeedsOptions = {
   delayMs?: number;
+  delayRangeMs?: {
+    minMs: number;
+    maxMs: number;
+  };
+  retryCount?: number;
+  retryDelayMs?: number;
+  deferredRetryDelayMs?: number;
 };
 
-const DEFAULT_RSS_REQUEST_DELAY_MS = 500;
+const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
+  minMs: 1_500,
+  maxMs: 4_500
+};
+const DEFAULT_RSS_RETRY_COUNT = 2;
+const DEFAULT_RSS_RETRY_DELAY_MS = 5_000;
+const DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS = 10_000;
 
 function wait(ms: number): Promise<void> {
   return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
+function sampleDelayMs(range: { minMs: number; maxMs: number }): number {
+  const minMs = Math.max(0, Math.min(range.minMs, range.maxMs));
+  const maxMs = Math.max(minMs, range.maxMs);
+  const centralBias = (Math.random() + Math.random()) / 2;
+  return Math.round(minMs + (maxMs - minMs) * centralBias);
+}
+
+function nextFeedDelayMs(options: FetchJournalFeedsOptions): number {
+  if (options.delayMs !== undefined) {
+    return options.delayMs;
+  }
+  return sampleDelayMs(options.delayRangeMs ?? DEFAULT_RSS_REQUEST_DELAY_RANGE_MS);
 }
 
 function feedLabel(feed: FetchableFeed): string {
@@ -138,6 +165,41 @@ function feedLogLabel(feed: FetchableFeed): string {
   const label = feedLabel(feed);
   const publisher = feedPublisher(feed);
   return publisher ? `[${publisher}] ${label}` : label;
+}
+
+function feedHost(feed: FetchableFeed): string | undefined {
+  try {
+    return new URL(feed.rss).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+}
+
+function feedScheduleKey(feed: FetchableFeed): string {
+  return feedPublisher(feed) ?? feedHost(feed) ?? feedLabel(feed);
+}
+
+function interleaveFeedsByPublisher<TFeed extends FetchableFeed>(feeds: TFeed[]): TFeed[] {
+  const queues = new Map<string, TFeed[]>();
+  for (const feed of feeds) {
+    const key = feedScheduleKey(feed);
+    queues.set(key, [...(queues.get(key) ?? []), feed]);
+  }
+
+  const ordered: TFeed[] = [];
+  while (queues.size > 0) {
+    for (const [key, queue] of [...queues.entries()]) {
+      const feed = queue.shift();
+      if (feed) {
+        ordered.push(feed);
+      }
+      if (queue.length === 0) {
+        queues.delete(key);
+      }
+    }
+  }
+
+  return ordered;
 }
 
 function asStringArray(value: string | string[] | undefined): string[] {
@@ -474,6 +536,77 @@ function isXmlContentType(contentType: string | null): boolean {
   return Boolean(contentType?.toLowerCase().match(/\b(?:rss|rdf|atom|xml)\b/));
 }
 
+function isRetryableRssError(error: unknown): boolean {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = message.match(/^Status code (\d+)$/)?.[1];
+  if (status) {
+    const code = Number(status);
+    return code === 403 || code === 429 || code >= 500;
+  }
+
+  return message.startsWith("Expected RSS/XML feed but received ");
+}
+
+function publisherBlockReason(error: unknown): string | undefined {
+  const message = error instanceof Error ? error.message : String(error);
+  const status = message.match(/^Status code (\d+)$/)?.[1];
+  if (status) {
+    const code = Number(status);
+    if (code === 403 || code === 429) {
+      return "publisher rejected request";
+    }
+  }
+
+  if (message.startsWith("Expected RSS/XML feed but received ")) {
+    return "publisher returned non-RSS response";
+  }
+
+  return undefined;
+}
+
+type FeedAttemptResult =
+  | {
+      status: "fulfilled";
+      papers: FeedPaper[];
+    }
+  | {
+      status: "rejected";
+      error: unknown;
+    };
+
+async function fetchJournalFeedWithRetries(
+  journal: FetchableFeed,
+  retryCount: number,
+  retryDelayMs: number
+): Promise<FeedAttemptResult> {
+  let lastError: unknown;
+  for (let attempt = 0; attempt <= retryCount; attempt += 1) {
+    if (attempt > 0) {
+      await wait(retryDelayMs);
+    }
+
+    try {
+      return {
+        status: "fulfilled",
+        papers: await fetchJournalFeed(journal)
+      };
+    } catch (error) {
+      lastError = error;
+      if (attempt >= retryCount || !isRetryableRssError(error)) {
+        return {
+          status: "rejected",
+          error
+        };
+      }
+    }
+  }
+
+  return {
+    status: "rejected",
+    error: lastError
+  };
+}
+
 export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
   const response = await fetch(journal.rss, {
     headers: nextRssHeaders()
@@ -500,23 +633,49 @@ export async function fetchJournalFeeds(
   options: FetchJournalFeedsOptions = {}
 ): Promise<FeedPaper[]> {
   const progress = createProgress("RSS", { total: journals.length });
-  const delayMs = options.delayMs ?? DEFAULT_RSS_REQUEST_DELAY_MS;
+  const retryCount = options.retryCount ?? DEFAULT_RSS_RETRY_COUNT;
+  const retryDelayMs = options.retryDelayMs ?? DEFAULT_RSS_RETRY_DELAY_MS;
+  const deferredRetryDelayMs = options.deferredRetryDelayMs ?? DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS;
   const papers: FeedPaper[] = [];
+  const scheduledJournals = interleaveFeedsByPublisher(journals);
+  const deferred: Array<{ journal: FetchableFeed; error: unknown }> = [];
 
-  for (const [index, journal] of journals.entries()) {
+  for (const [index, journal] of scheduledJournals.entries()) {
     if (index > 0) {
-      await wait(delayMs);
+      await wait(nextFeedDelayMs(options));
     }
 
     const logLabel = feedLogLabel(journal);
-
-    try {
-      const feedPapers = await fetchJournalFeed(journal);
-      papers.push(...feedPapers);
-      progress.step(`${logLabel}: ${feedPapers.length} papers`);
-    } catch (error) {
-      progress.step(`${logLabel} failed: ${String(error)}`);
+    const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs);
+    if (result.status === "fulfilled") {
+      papers.push(...result.papers);
+      progress.step(`${logLabel}: ${result.papers.length} papers`);
+      continue;
     }
+
+    if (publisherBlockReason(result.error)) {
+      deferred.push({ journal, error: result.error });
+      continue;
+    }
+
+    progress.step(`${logLabel} failed: ${String(result.error)}`);
+  }
+
+  if (deferred.length > 0) {
+    await wait(deferredRetryDelayMs);
+  }
+
+  for (const { journal, error: originalError } of deferred) {
+    const logLabel = feedLogLabel(journal);
+    const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs);
+    if (result.status === "fulfilled") {
+      papers.push(...result.papers);
+      progress.step(`${logLabel}: ${result.papers.length} papers`);
+      continue;
+    }
+
+    const blockReason = publisherBlockReason(result.error) ?? publisherBlockReason(originalError);
+    progress.step(blockReason ? `${logLabel}: 0 papers (${blockReason})` : `${logLabel} failed: ${String(result.error)}`);
   }
 
   return papers;

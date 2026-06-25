@@ -485,6 +485,239 @@ describe("normalizeFeedItem", () => {
     expect(logSpy).toHaveBeenCalled();
   });
 
+  it("samples variable RSS feed delays from a configured range", async () => {
+    const randomSpy = vi.spyOn(Math, "random").mockReturnValueOnce(0).mockReturnValueOnce(1);
+    const requestTimes: number[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        requestTimes.push(Date.now());
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    await fetchJournalFeeds(
+      [
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" },
+        { name: "IJGIS", rss: "https://www.tandfonline.com/feed/rss/tgis20" }
+      ],
+      { delayRangeMs: { minMs: 20, maxMs: 40 } }
+    );
+
+    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThanOrEqual(25);
+    expect(randomSpy).toHaveBeenCalledTimes(2);
+  });
+
+  it("interleaves publishers while loading RSS feeds", async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        requestedUrls.push(String(input));
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    await fetchJournalFeeds(
+      [
+        { name: "Nature", rss: "https://www.nature.com/nature.rss" },
+        { name: "Nature Cities", rss: "https://www.nature.com/natcities.rss" },
+        { name: "Science", rss: "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science" },
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" }
+      ],
+      { delayMs: 0 }
+    );
+
+    expect(requestedUrls).toEqual([
+      "https://www.nature.com/nature.rss",
+      "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
+      "https://www.tandfonline.com/feed/rss/raag21",
+      "https://www.nature.com/natcities.rss"
+    ]);
+  });
+
+  it("retries temporary RSS status failures while loading multiple feeds", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const fetchMock = vi.fn(async () => {
+      const status = fetchMock.mock.calls.length === 1 ? 403 : 200;
+      return new Response(
+        `<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Feed</title>
+            <item>
+              <title>Paper</title>
+              <link>https://example.test/paper</link>
+            </item>
+          </channel>
+        </rss>`,
+        {
+          status,
+          headers: { "Content-Type": "application/rss+xml" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const papers = await fetchJournalFeeds([{ name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" }], {
+      delayMs: 0,
+      retryDelayMs: 0
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(papers).toHaveLength(1);
+    expect(logSpy.mock.calls.flat().join("\n")).not.toContain("failed");
+  });
+
+  it("retries temporary HTML challenge pages while loading multiple feeds", async () => {
+    const fetchMock = vi.fn(async () => {
+      if (fetchMock.mock.calls.length === 1) {
+        return new Response("<!DOCTYPE html><html><title>Challenge</title></html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      }
+
+      return new Response(
+        `<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Nature</title>
+            <item>
+              <title>Paper</title>
+              <link>https://example.test/paper</link>
+            </item>
+          </channel>
+        </rss>`,
+        {
+          status: 200,
+          headers: { "Content-Type": "application/rss+xml" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const papers = await fetchJournalFeeds([{ name: "Nature Health", rss: "https://www.nature.com/naturehealth.rss" }], {
+      delayMs: 0,
+      retryDelayMs: 0
+    });
+
+    expect(fetchMock).toHaveBeenCalledTimes(2);
+    expect(papers).toHaveLength(1);
+  });
+
+  it("logs persistent publisher blocks as zero-paper feeds instead of errors", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      })
+    );
+
+    const papers = await fetchJournalFeeds([{ name: "Nature Geoscience", rss: "https://www.nature.com/ngeo.rss" }], {
+      delayMs: 0,
+      retryCount: 1,
+      retryDelayMs: 0,
+      deferredRetryDelayMs: 0
+    });
+
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(papers).toHaveLength(0);
+    expect(logs).toContain("[Springer] Nature Geoscience: 0 papers (publisher returned non-RSS response)");
+    expect(logs).not.toContain("failed: Error");
+  });
+
+  it("defers publisher-blocked feeds and retries them after other feeds", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input);
+        requestedUrls.push(url);
+        const isFirstNatureAttempt =
+          url === "https://www.nature.com/ngeo.rss" &&
+          requestedUrls.filter((requestedUrl) => requestedUrl === url).length === 1;
+
+        if (isFirstNatureAttempt) {
+          return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
+            status: 200,
+            headers: { "Content-Type": "text/html; charset=utf-8" }
+          });
+        }
+
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    const papers = await fetchJournalFeeds(
+      [
+        { name: "Nature Geoscience", rss: "https://www.nature.com/ngeo.rss" },
+        { name: "Science", rss: "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science" }
+      ],
+      { delayMs: 0, retryCount: 0, deferredRetryDelayMs: 0 }
+    );
+
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(requestedUrls).toEqual([
+      "https://www.nature.com/ngeo.rss",
+      "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
+      "https://www.nature.com/ngeo.rss"
+    ]);
+    expect(papers).toHaveLength(2);
+    expect(logs).toContain("[Springer] Nature Geoscience: 1 papers");
+    expect(logs).not.toContain("[Springer] Nature Geoscience: 0 papers");
+  });
+
   it.each([
     {
       label: "Nature",
