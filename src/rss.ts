@@ -46,9 +46,12 @@ const RSS_COMMON_HEADERS = {
   Accept: "application/rss+xml, application/rdf+xml, application/atom+xml, application/xml, text/xml, */*;q=0.8",
   "Accept-Language": "en-US,en;q=0.9",
   "Cache-Control": "no-cache",
+  Pragma: "no-cache"
+} satisfies RssHeaders;
+
+const RSS_BROWSER_NAVIGATION_HEADERS = {
   Connection: "keep-alive",
   DNT: "1",
-  Pragma: "no-cache",
   Priority: "u=0, i",
   "Sec-Fetch-Dest": "document",
   "Sec-Fetch-Mode": "navigate",
@@ -57,8 +60,12 @@ const RSS_COMMON_HEADERS = {
   "Upgrade-Insecure-Requests": "1"
 } satisfies RssHeaders;
 
-const RSS_BROWSER_HEADER_PROFILES: RssHeaders[] = [
+const RSS_HEADER_PROFILES: RssHeaders[] = [
   {
+    "User-Agent": "paper-daily-feed/0.1.2 (+https://github.com/nehSgnaiL/paper-daily-feed)"
+  },
+  {
+    ...RSS_BROWSER_NAVIGATION_HEADERS,
     "User-Agent":
       "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
     "Sec-CH-UA": '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="99"',
@@ -66,10 +73,12 @@ const RSS_BROWSER_HEADER_PROFILES: RssHeaders[] = [
     "Sec-CH-UA-Platform": '"Windows"'
   },
   {
+    ...RSS_BROWSER_NAVIGATION_HEADERS,
     "User-Agent":
       "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
   },
   {
+    ...RSS_BROWSER_NAVIGATION_HEADERS,
     "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
   }
 ];
@@ -77,8 +86,12 @@ const RSS_BROWSER_HEADER_PROFILES: RssHeaders[] = [
 let rssHeaderProfileIndex = 0;
 
 function nextRssHeaders(): RssHeaders {
-  const profile = RSS_BROWSER_HEADER_PROFILES[rssHeaderProfileIndex % RSS_BROWSER_HEADER_PROFILES.length] ?? {};
+  const profile = RSS_HEADER_PROFILES[rssHeaderProfileIndex % RSS_HEADER_PROFILES.length] ?? {};
   rssHeaderProfileIndex += 1;
+  return rssHeadersForProfile(profile);
+}
+
+function rssHeadersForProfile(profile: RssHeaders): RssHeaders {
   return {
     ...RSS_COMMON_HEADERS,
     ...profile
@@ -586,9 +599,10 @@ async function fetchJournalFeedWithRetries(
     }
 
     try {
+      const profile = RSS_HEADER_PROFILES[attempt % RSS_HEADER_PROFILES.length] ?? {};
       return {
         status: "fulfilled",
-        papers: await fetchJournalFeed(journal)
+        papers: await fetchJournalFeedWithHeaders(journal, rssHeadersForProfile(profile))
       };
     } catch (error) {
       lastError = error;
@@ -607,9 +621,9 @@ async function fetchJournalFeedWithRetries(
   };
 }
 
-export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
+async function fetchJournalFeedWithHeaders(journal: FetchableFeed, headers: RssHeaders): Promise<FeedPaper[]> {
   const response = await fetch(journal.rss, {
-    headers: nextRssHeaders()
+    headers
   });
 
   if (!response.ok) {
@@ -626,6 +640,10 @@ export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPape
   return feed.items
     .map((item) => normalizeFeedItem(feedLabel(journal), item))
     .filter((paper): paper is FeedPaper => paper !== null);
+}
+
+export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
+  return fetchJournalFeedWithHeaders(journal, nextRssHeaders());
 }
 
 export async function fetchJournalFeeds(
@@ -665,7 +683,11 @@ export async function fetchJournalFeeds(
     await wait(deferredRetryDelayMs);
   }
 
-  for (const { journal, error: originalError } of deferred) {
+  for (const [index, { journal, error: originalError }] of deferred.entries()) {
+    if (index > 0) {
+      await wait(nextFeedDelayMs(options));
+    }
+
     const logLabel = feedLogLabel(journal);
     const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs);
     if (result.status === "fulfilled") {

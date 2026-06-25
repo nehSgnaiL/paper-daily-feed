@@ -222,7 +222,7 @@ describe("normalizeFeedItem", () => {
     expect(normalizeFeedItem("Nature", { title: "Valid title" })).toBeNull();
   });
 
-  it("fetches RSS feeds with browser-compatible headers", async () => {
+  it("fetches RSS feeds with RSS-compatible headers", async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(
         `<?xml version="1.0"?>
@@ -258,22 +258,14 @@ describe("normalizeFeedItem", () => {
           Accept: expect.stringContaining("application/rss+xml"),
           "Accept-Language": "en-US,en;q=0.9",
           "Cache-Control": "no-cache",
-          Connection: "keep-alive",
-          DNT: "1",
           Pragma: "no-cache",
-          Priority: "u=0, i",
-          "Sec-Fetch-Dest": "document",
-          "Sec-Fetch-Mode": "navigate",
-          "Sec-Fetch-Site": "none",
-          "Sec-Fetch-User": "?1",
-          "Upgrade-Insecure-Requests": "1",
-          "User-Agent": expect.stringContaining("Mozilla/5.0")
+          "User-Agent": expect.stringContaining("paper-daily-feed")
         })
       })
     );
   });
 
-  it("samples from multiple browser header profiles across RSS requests", async () => {
+  it("samples from multiple RSS header profiles across RSS requests", async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(
         `<?xml version="1.0"?>
@@ -304,6 +296,42 @@ describe("normalizeFeedItem", () => {
     });
 
     expect(new Set(userAgents).size).toBeGreaterThan(1);
+  });
+
+  it("rotates to browser headers after feed-reader header failures", async () => {
+    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+      const userAgent = (init?.headers as Record<string, string>)["User-Agent"];
+      const status = userAgent.includes("paper-daily-feed") ? 403 : 200;
+      return new Response(
+        `<?xml version="1.0"?>
+        <rss version="2.0">
+          <channel>
+            <title>Feed</title>
+            <item>
+              <title>Paper</title>
+              <link>https://example.test/paper</link>
+            </item>
+          </channel>
+        </rss>`,
+        {
+          status,
+          headers: { "Content-Type": "application/rss+xml" }
+        }
+      );
+    });
+    vi.stubGlobal("fetch", fetchMock);
+
+    const papers = await fetchJournalFeeds([{ name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" }], {
+      delayMs: 0,
+      retryDelayMs: 0
+    });
+
+    const userAgents = (fetchMock.mock.calls as unknown as Array<[string, RequestInit]>).map(
+      ([, init]) => (init.headers as Record<string, string>)["User-Agent"]
+    );
+    expect(papers).toHaveLength(1);
+    expect(userAgents[0]).toContain("paper-daily-feed");
+    expect(userAgents[1]).toContain("Mozilla/5.0");
   });
 
   it("rejects HTML challenge pages before XML parsing", async () => {
@@ -716,6 +744,53 @@ describe("normalizeFeedItem", () => {
     expect(papers).toHaveLength(2);
     expect(logs).toContain("[Springer] Nature Geoscience: 1 papers");
     expect(logs).not.toContain("[Springer] Nature Geoscience: 0 papers");
+  });
+
+  it("waits between deferred publisher retries", async () => {
+    const requestTimesByUrl = new Map<string, number[]>();
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input);
+        requestTimesByUrl.set(url, [...(requestTimesByUrl.get(url) ?? []), Date.now()]);
+        const isFirstAttempt = (requestTimesByUrl.get(url) ?? []).length === 1;
+        if (isFirstAttempt) {
+          return new Response("", {
+            status: 403,
+            headers: { "Content-Type": "text/plain" }
+          });
+        }
+
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    await fetchJournalFeeds(
+      [
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" },
+        { name: "IJGIS", rss: "https://www.tandfonline.com/feed/rss/tgis20" }
+      ],
+      { retryCount: 0, deferredRetryDelayMs: 0, delayRangeMs: { minMs: 20, maxMs: 20 } }
+    );
+
+    const aaagRetry = requestTimesByUrl.get("https://www.tandfonline.com/feed/rss/raag21")?.[1] ?? 0;
+    const ijgisRetry = requestTimesByUrl.get("https://www.tandfonline.com/feed/rss/tgis20")?.[1] ?? 0;
+    expect(ijgisRetry - aaagRetry).toBeGreaterThanOrEqual(15);
   });
 
   it.each([
