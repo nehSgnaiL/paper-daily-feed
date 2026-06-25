@@ -349,15 +349,138 @@ describe("normalizeFeedItem", () => {
       })
     );
 
-    const papers = await fetchJournalFeeds([
-      {
-        kind: "custom",
-        name: "Custom Digest",
-        rss: "https://example.test/feed.xml"
-      }
-    ]);
+    const papers = await fetchJournalFeeds(
+      [
+        {
+          kind: "custom",
+          name: "Custom Digest",
+          rss: "https://example.test/feed.xml"
+        }
+      ],
+      { delayMs: 0 }
+    );
 
     expect(papers[0]?.journal).toBe("Custom Digest");
+  });
+
+  it("logs publisher context while loading RSS feeds", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Nature</title>
+              <item>
+                <title>Nature paper</title>
+                <link>https://example.test/nature-paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    const feeds = [
+      { name: "Nature", rss: "https://www.nature.com/nature.rss" },
+      ...Array.from({ length: 19 }, (_, index) => ({
+        kind: "custom" as const,
+        name: `Custom ${index + 1}`,
+        rss: `https://example.test/custom-${index + 1}.xml`
+      }))
+    ];
+
+    await fetchJournalFeeds(feeds, { delayMs: 0 });
+
+    expect(logSpy.mock.calls.flat().join("\n")).toMatch(
+      /\[RSS] 1\/20 \[#-------------------] 5% \| \d+\.\ds \| \[Springer] Nature: 1 papers/
+    );
+  });
+
+  it("loads RSS feeds without concurrent publisher requests", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    let activeRequests = 0;
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        activeRequests += 1;
+        await new Promise((resolve) => setTimeout(resolve, 1));
+        const status = activeRequests > 1 ? 403 : 200;
+        activeRequests -= 1;
+
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    const papers = await fetchJournalFeeds(
+      [
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" },
+        { name: "IJGIS", rss: "https://www.tandfonline.com/feed/rss/tgis20" }
+      ],
+      { delayMs: 0 }
+    );
+
+    expect(papers).toHaveLength(2);
+    expect(logSpy.mock.calls.flat().join("\n")).not.toContain("Status code 403");
+  });
+
+  it("waits between RSS feed requests when configured", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const requestTimes: number[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        requestTimes.push(Date.now());
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    await fetchJournalFeeds(
+      [
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" },
+        { name: "IJGIS", rss: "https://www.tandfonline.com/feed/rss/tgis20" }
+      ],
+      { delayMs: 20 }
+    );
+
+    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThanOrEqual(15);
+    expect(logSpy).toHaveBeenCalled();
   });
 
   it.each([

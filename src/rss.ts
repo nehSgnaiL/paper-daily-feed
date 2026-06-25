@@ -87,8 +87,57 @@ function nextRssHeaders(): RssHeaders {
 
 type FetchableFeed = Journal | FeedSource;
 
+type FetchJournalFeedsOptions = {
+  delayMs?: number;
+};
+
+const DEFAULT_RSS_REQUEST_DELAY_MS = 500;
+
+function wait(ms: number): Promise<void> {
+  return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
+}
+
 function feedLabel(feed: FetchableFeed): string {
   return "kind" in feed ? feed.name : (feed.abbr ?? feed.name);
+}
+
+function feedPublisher(feed: FetchableFeed): string | undefined {
+  let host: string;
+  try {
+    host = new URL(feed.rss).hostname.toLowerCase();
+  } catch {
+    return undefined;
+  }
+
+  if (host.endsWith("nature.com")) {
+    return "Springer";
+  }
+  if (host.endsWith("science.org")) {
+    return "AAAS";
+  }
+  if (host.endsWith("pnas.org")) {
+    return "PNAS";
+  }
+  if (host.endsWith("tandfonline.com")) {
+    return "Taylor & Francis";
+  }
+  if (host.endsWith("sciencedirect.com")) {
+    return "Elsevier";
+  }
+  if (host.endsWith("royalsocietypublishing.org")) {
+    return "Royal Society";
+  }
+  if (host.endsWith("ieeexplore.ieee.org")) {
+    return "IEEE";
+  }
+
+  return undefined;
+}
+
+function feedLogLabel(feed: FetchableFeed): string {
+  const label = feedLabel(feed);
+  const publisher = feedPublisher(feed);
+  return publisher ? `[${publisher}] ${label}` : label;
 }
 
 function asStringArray(value: string | string[] | undefined): string[] {
@@ -446,26 +495,32 @@ export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPape
     .filter((paper): paper is FeedPaper => paper !== null);
 }
 
-export async function fetchJournalFeeds(journals: FetchableFeed[]): Promise<FeedPaper[]> {
+export async function fetchJournalFeeds(
+  journals: FetchableFeed[],
+  options: FetchJournalFeedsOptions = {}
+): Promise<FeedPaper[]> {
   const progress = createProgress("RSS", { total: journals.length });
-  const results = await Promise.allSettled(
-    journals.map(async (journal, index) => {
-      const label = feedLabel(journal);
-      console.log(`[RSS] start ${index + 1}/${journals.length}: ${label}`);
-      const papers = await fetchJournalFeed(journal);
-      progress.step(`${label}: ${papers.length} papers`);
-      return papers;
-    })
-  );
-  return results.flatMap((result, index) => {
-    if (result.status === "fulfilled") {
-      return result.value;
+  const delayMs = options.delayMs ?? DEFAULT_RSS_REQUEST_DELAY_MS;
+  const papers: FeedPaper[] = [];
+
+  for (const [index, journal] of journals.entries()) {
+    if (index > 0) {
+      await wait(delayMs);
     }
 
-    const journal = journals[index];
-    progress.step(`${journal ? feedLabel(journal) : "unknown feed"} failed: ${String(result.reason)}`);
-    return [];
-  });
+    const logLabel = feedLogLabel(journal);
+    console.log(`[RSS] start ${index + 1}/${journals.length}: ${logLabel}`);
+
+    try {
+      const feedPapers = await fetchJournalFeed(journal);
+      papers.push(...feedPapers);
+      progress.step(`${logLabel}: ${feedPapers.length} papers`);
+    } catch (error) {
+      progress.step(`${logLabel} failed: ${String(error)}`);
+    }
+  }
+
+  return papers;
 }
 
 export function filterRecentPapers(papers: FeedPaper[], maxAgeDays: number, now = new Date()): FeedPaper[] {
