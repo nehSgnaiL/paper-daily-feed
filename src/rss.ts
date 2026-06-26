@@ -590,7 +590,11 @@ type FeedAttemptResult =
 async function fetchJournalFeedWithRetries(
   journal: FetchableFeed,
   retryCount: number,
-  retryDelayMs: number
+  retryDelayMs: number,
+  options: {
+    deferPublisherBlocks?: boolean;
+    startProfileIndex?: number;
+  } = {}
 ): Promise<FeedAttemptResult> {
   let lastError: unknown;
   for (let attempt = 0; attempt <= retryCount; attempt += 1) {
@@ -599,13 +603,20 @@ async function fetchJournalFeedWithRetries(
     }
 
     try {
-      const profile = RSS_HEADER_PROFILES[attempt % RSS_HEADER_PROFILES.length] ?? {};
+      const profile =
+        RSS_HEADER_PROFILES[((options.startProfileIndex ?? 0) + attempt) % RSS_HEADER_PROFILES.length] ?? {};
       return {
         status: "fulfilled",
         papers: await fetchJournalFeedWithHeaders(journal, rssHeadersForProfile(profile))
       };
     } catch (error) {
       lastError = error;
+      if (options.deferPublisherBlocks && publisherBlockReason(error)) {
+        return {
+          status: "rejected",
+          error
+        };
+      }
       if (attempt >= retryCount || !isRetryableRssError(error)) {
         return {
           status: "rejected",
@@ -664,7 +675,9 @@ export async function fetchJournalFeeds(
     }
 
     const logLabel = feedLogLabel(journal);
-    const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs);
+    const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs, {
+      deferPublisherBlocks: scheduledJournals.length > 1
+    });
     if (result.status === "fulfilled") {
       papers.push(...result.papers);
       progress.step(`${logLabel}: ${result.papers.length} papers`);
@@ -689,7 +702,7 @@ export async function fetchJournalFeeds(
     }
 
     const logLabel = feedLogLabel(journal);
-    const result = await fetchJournalFeedWithRetries(journal, retryCount, retryDelayMs);
+    const result = await fetchJournalFeedWithRetries(journal, 0, retryDelayMs, { startProfileIndex: 1 });
     if (result.status === "fulfilled") {
       papers.push(...result.papers);
       progress.step(`${logLabel}: ${result.papers.length} papers`);

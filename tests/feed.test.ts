@@ -746,6 +746,59 @@ describe("normalizeFeedItem", () => {
     expect(logs).not.toContain("[Springer] Nature Geoscience: 0 papers");
   });
 
+  it("defers publisher-blocked feeds without immediate same-feed retries", async () => {
+    const requestedUrls: string[] = [];
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async (input: string | URL | Request) => {
+        const url = String(input);
+        requestedUrls.push(url);
+
+        if (url === "https://www.tandfonline.com/feed/rss/raag21") {
+          const aaagAttemptCount = requestedUrls.filter((requestedUrl) => requestedUrl === url).length;
+          if (aaagAttemptCount === 1) {
+            return new Response("", {
+              status: 403,
+              headers: { "Content-Type": "text/plain" }
+            });
+          }
+        }
+
+        return new Response(
+          `<?xml version="1.0"?>
+          <rss version="2.0">
+            <channel>
+              <title>Feed</title>
+              <item>
+                <title>Paper</title>
+                <link>https://example.test/paper</link>
+              </item>
+            </channel>
+          </rss>`,
+          {
+            status: 200,
+            headers: { "Content-Type": "application/rss+xml" }
+          }
+        );
+      })
+    );
+
+    const papers = await fetchJournalFeeds(
+      [
+        { name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" },
+        { name: "Science", rss: "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science" }
+      ],
+      { delayMs: 0, retryDelayMs: 0, deferredRetryDelayMs: 0 }
+    );
+
+    expect(requestedUrls).toEqual([
+      "https://www.tandfonline.com/feed/rss/raag21",
+      "https://www.science.org/action/showFeed?type=etoc&feed=rss&jc=science",
+      "https://www.tandfonline.com/feed/rss/raag21"
+    ]);
+    expect(papers).toHaveLength(2);
+  });
+
   it("waits between deferred publisher retries", async () => {
     const requestTimesByUrl = new Map<string, number[]>();
     vi.stubGlobal(
