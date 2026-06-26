@@ -116,6 +116,18 @@
     // On failure or timeout, existing parsed authors/affiliation are kept.
     "timeoutMs": 300000
   },
+  "metadataEnrichment": {
+    // Can skip the whole metadataEnrichment section. Enabled by default.
+    // true: supplement RSS papers with trusted external metadata before matching.
+    // false or empty: use RSS parser metadata only.
+    "enabled": true,
+    "crossref": {
+      // Can skip. Crossref is used only when a DOI is found in the RSS item URL or metadata.
+      "enabled": true,
+      // Can skip. Optional contact email for Crossref polite API usage.
+      "mailto": ""
+    }
+  },
   "summary": {
     // Can skip the whole summary section. Summaries are disabled by default.
     // true: call an OpenAI-compatible chat API for one-sentence TLDRs.

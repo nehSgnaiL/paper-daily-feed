@@ -11,6 +11,7 @@ export type AppConfig = {
   };
   matching: MatchingConfig;
   metadataRepair: MetadataRepairConfig;
+  metadataEnrichment: MetadataEnrichmentConfig;
   summary: SummaryConfig;
   delivery: DeliveryConfig;
   runtime: {
@@ -90,6 +91,14 @@ export type MetadataRepairConfig = {
   enabled: boolean;
   model: string;
   timeoutMs: number;
+};
+
+export type MetadataEnrichmentConfig = {
+  enabled: boolean;
+  crossref: {
+    enabled: boolean;
+    mailto: string;
+  };
 };
 
 type Env = Record<string, string | undefined>;
@@ -370,6 +379,8 @@ function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
   const matchingApi = asRecord(matching.api);
   const matchingLocal = asRecord(matching.local);
   const metadataRepair = asRecord(rawConfig.metadataRepair);
+  const metadataEnrichment = asRecord(rawConfig.metadataEnrichment);
+  const metadataEnrichmentCrossref = asRecord(metadataEnrichment.crossref);
   const summary = asRecord(rawConfig.summary);
   const delivery = asRecord(rawConfig.delivery);
   const runtime = asRecord(rawConfig.runtime);
@@ -426,6 +437,13 @@ function normalizeAppConfig(rawConfig: UnknownRecord, env: Env): AppConfig {
       enabled: asBoolean(metadataRepair.enabled, false),
       model: asString(metadataRepair.model, "onnx-community/bert-base-NER-ONNX"),
       timeoutMs: asNumber(metadataRepair.timeoutMs, 300000)
+    },
+    metadataEnrichment: {
+      enabled: asBoolean(metadataEnrichment.enabled, true),
+      crossref: {
+        enabled: asBoolean(metadataEnrichmentCrossref.enabled, true),
+        mailto: asString(metadataEnrichmentCrossref.mailto, "")
+      }
     },
     summary: {
       enabled: asBoolean(summary.enabled, false),

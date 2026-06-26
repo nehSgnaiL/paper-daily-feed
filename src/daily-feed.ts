@@ -13,6 +13,7 @@ import { sendEmail } from "./email.js";
 import { buildInterestCorpus } from "./interest-corpus.js";
 import { rankPapers } from "./matching.js";
 import { repairRecommendationMetadata } from "./metadata-repair.js";
+import { enrichFeedPapers } from "./metadata-enrichment.js";
 import { renderRecommendationEmail, summarizeRecommendations } from "./recommendation-delivery.js";
 import { fetchRecentFeedPapers } from "./feed-ingestion.js";
 
@@ -93,8 +94,9 @@ export async function runDailyFeed(
   console.log(
     `Filtered ${recentPapers.length - eligiblePapers.length} already delivered papers; ${eligiblePapers.length} candidates remain.`
   );
-  console.log(`Ranking ${eligiblePapers.length} papers against ${interestCorpus.length} interest documents with ${matchingProvider(config)}...`);
-  let recommendations = await rankPapers(config.matching, eligiblePapers, interestCorpus, env);
+  const enrichedPapers = await enrichFeedPapers(eligiblePapers, config.metadataEnrichment);
+  console.log(`Ranking ${enrichedPapers.length} papers against ${interestCorpus.length} interest documents with ${matchingProvider(config)}...`);
+  let recommendations = await rankPapers(config.matching, enrichedPapers, interestCorpus, env);
   console.log(`Ranked ${recommendations.length} recommended papers.`);
   recommendations = await repairRecommendationMetadata(recommendations, config.metadataRepair);
 

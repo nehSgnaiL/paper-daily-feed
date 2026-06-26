@@ -15,6 +15,7 @@ export type FeedPaper = {
   title: string;
   abstract: string;
   url: string;
+  doi?: string;
   publishedAt: Date | null;
   authors?: string[];
   firstAffiliation?: string;

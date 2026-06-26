@@ -279,6 +279,13 @@ describe("loadAppConfig", () => {
         model: "onnx-community/bert-base-NER-ONNX",
         timeoutMs: 300000
       },
+      metadataEnrichment: {
+        enabled: true,
+        crossref: {
+          enabled: true,
+          mailto: ""
+        }
+      },
       summary: {
         enabled: false,
         baseUrl: "https://api.openai.com/v1",

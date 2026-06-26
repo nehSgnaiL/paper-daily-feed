@@ -11,6 +11,9 @@ const feedMock = vi.hoisted(() => ({
 const matchingMock = vi.hoisted(() => ({
   rankPapers: vi.fn()
 }));
+const metadataEnrichmentMock = vi.hoisted(() => ({
+  enrichFeedPapers: vi.fn()
+}));
 const metadataRepairMock = vi.hoisted(() => ({
   repairRecommendationMetadata: vi.fn()
 }));
@@ -28,6 +31,7 @@ const historyMock = vi.hoisted(() => ({
 vi.mock("../src/interest-corpus.js", () => corpusMock);
 vi.mock("../src/feed-ingestion.js", () => feedMock);
 vi.mock("../src/matching.js", () => matchingMock);
+vi.mock("../src/metadata-enrichment.js", () => metadataEnrichmentMock);
 vi.mock("../src/metadata-repair.js", () => metadataRepairMock);
 vi.mock("../src/email.js", async (importOriginal) => {
   const actual = await importOriginal<typeof import("../src/email.js")>();
@@ -87,6 +91,13 @@ function config(overrides: Partial<AppConfig> = {}): AppConfig {
       enabled: false,
       model: "onnx-community/bert-base-NER-ONNX",
       timeoutMs: 300000
+    },
+    metadataEnrichment: {
+      enabled: true,
+      crossref: {
+        enabled: true,
+        mailto: ""
+      }
     },
     summary: {
       enabled: false,
@@ -148,6 +159,9 @@ describe("runDailyFeed delivery history", () => {
     });
     corpusMock.buildInterestCorpus.mockResolvedValue([interest]);
     feedMock.fetchRecentFeedPapers.mockResolvedValue([paper("Delivered"), paper("Fresh")]);
+    metadataEnrichmentMock.enrichFeedPapers.mockImplementation(async (papers) =>
+      papers.map((candidate: FeedPaper) => ({ ...candidate, abstract: `Enriched ${candidate.abstract}` }))
+    );
     matchingMock.rankPapers.mockResolvedValue([recommended("Fresh")]);
     metadataRepairMock.repairRecommendationMetadata.mockImplementation(async (recommendations) => recommendations);
     emailMock.sendEmail.mockResolvedValue({ messageId: "message-id" });
@@ -162,7 +176,16 @@ describe("runDailyFeed delivery history", () => {
       { version: 1, delivered: [] },
       {}
     );
-    expect(matchingMock.rankPapers).toHaveBeenCalledWith(config().matching, [paper("Fresh")], [interest], {});
+    expect(metadataEnrichmentMock.enrichFeedPapers).toHaveBeenCalledWith(
+      [paper("Fresh")],
+      config().metadataEnrichment
+    );
+    expect(matchingMock.rankPapers).toHaveBeenCalledWith(
+      config().matching,
+      [{ ...paper("Fresh"), abstract: "Enriched Abstract" }],
+      [interest],
+      {}
+    );
     expect(metadataRepairMock.repairRecommendationMetadata).toHaveBeenCalledWith(
       [recommended("Fresh")],
       config().metadataRepair

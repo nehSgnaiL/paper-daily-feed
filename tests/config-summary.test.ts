@@ -52,6 +52,7 @@ describe("config summary", () => {
     expect(output).toContain("feeds: catalog=1, customRss=1");
     expect(output).toContain("matching: provider=api, active=api, model=text-embedding-3-small");
     expect(output).toContain("metadataRepair: enabled=false, model=onnx-community/bert-base-NER-ONNX, timeoutMs=300000");
+    expect(output).toContain("metadataEnrichment: enabled=true, crossref=true");
     expect(output).toContain("summary: enabled=true, model=gpt-4o-mini, language=Chinese");
     expect(output).toContain("delivery: mode=smtp, from=sender@example.test, to=receiver@example.test, smtpHost=smtp.example.test, smtpPort=465");
     expect(output).not.toContain("zotero-secret");
