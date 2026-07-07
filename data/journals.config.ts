@@ -10,6 +10,7 @@ type Journal = {
   name: string;
   abbr?: string;
   rss: string;
+  issn?: string;
 };
 
 // stored data
@@ -60,7 +61,8 @@ const journals: Journal[] = [
   {
     name: "Annals of the American Association of Geographers",
     abbr: "AAAG",
-    rss: "https://www.tandfonline.com/feed/rss/raag21"
+    rss: "https://www.tandfonline.com/feed/rss/raag21",
+    issn: "2469-4460"
   },
   {
     name: "Computers, Environment and Urban Systems",
@@ -75,7 +77,8 @@ const journals: Journal[] = [
   {
     name: "International Journal of Geographical Information Science",
     abbr: "IJGIS",
-    rss: "https://www.tandfonline.com/feed/rss/tgis20"
+    rss: "https://www.tandfonline.com/feed/rss/tgis20",
+    issn: "1365-8816"
   },
   {
     name: "Cities",
@@ -104,11 +107,13 @@ const journals: Journal[] = [
   },
   {
     name: "Urban Geography",
-    rss: "https://www.tandfonline.com/feed/rss/rurb20"
+    rss: "https://www.tandfonline.com/feed/rss/rurb20",
+    issn: "1938-2847"
   },
   {
     name: "Economic Geography",
-    rss: "https://www.tandfonline.com/feed/rss/recg20"
+    rss: "https://www.tandfonline.com/feed/rss/recg20",
+    issn: "1944-8287"
   },
   {
     name: "npj Urban Sustainability",
@@ -137,7 +142,8 @@ const journals: Journal[] = [
   {
     name: "International Journal of Digital Earth",
     abbr: "IJDE",
-    rss: "https://www.tandfonline.com/feed/rss/tjde20"
+    rss: "https://www.tandfonline.com/feed/rss/tjde20",
+    issn: "1753-8955"
   },
   {
     name: "Sustainable Cities and Society",

@@ -728,6 +728,50 @@ describe("normalizeFeedItem", () => {
     );
   });
 
+  it("uses Crossref when a publisher blocks both fetch and curl", async () => {
+    const curlFetcher = vi.fn(async () => {
+      throw new Error("curl: (22) 403");
+    });
+    const crossrefFetcher = vi.fn(async () => [
+      {
+        doi: "10.1080/example",
+        title: "Paper recovered from Crossref",
+        authors: ["Ada Lovelace"],
+        publishedAt: new Date("2026-07-01"),
+        url: "https://doi.org/10.1080/example"
+      }
+    ]);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("blocked", { status: 403 })));
+
+    const papers = await fetchJournalFeeds(
+      [
+        {
+          kind: "catalog",
+          name: "AAAG",
+          rss: "https://www.tandfonline.com/feed/rss/raag21",
+          issn: "2469-4460"
+        }
+      ],
+      {
+        delayMs: 0,
+        retryCount: 0,
+        deferredRetryDelayMs: 0,
+        curlFallback: true,
+        curlFetcher,
+        crossrefFetcher
+      }
+    );
+
+    expect(crossrefFetcher).toHaveBeenCalledWith("2469-4460");
+    expect(papers).toMatchObject([
+      {
+        journal: "AAAG",
+        title: "Paper recovered from Crossref",
+        doi: "10.1080/example"
+      }
+    ]);
+  });
+
   it("defers publisher-blocked feeds and retries them after other feeds", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const requestedUrls: string[] = [];

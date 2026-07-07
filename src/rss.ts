@@ -2,6 +2,7 @@ import Parser from "rss-parser";
 import { execFile } from "node:child_process";
 import { promisify } from "node:util";
 import { createProgress } from "./progress.js";
+import { fetchCrossrefJournalWorks, type CrossrefMetadata } from "./crossref.js";
 import type { FeedPaper, FeedSource, Journal } from "./types.js";
 import { stripHtml } from "./text.js";
 
@@ -113,6 +114,7 @@ type FetchJournalFeedsOptions = {
   deferredRetryDelayMs?: number;
   curlFallback?: boolean;
   curlFetcher?: (journal: FetchableFeed) => Promise<FeedPaper[]>;
+  crossrefFetcher?: (issn: string) => Promise<CrossrefMetadata[]>;
 };
 
 const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
@@ -706,6 +708,7 @@ export async function fetchJournalFeeds(
   const deferredRetryDelayMs = options.deferredRetryDelayMs ?? DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS;
   const curlFallbackEnabled = options.curlFallback ?? process.env.GITHUB_ACTIONS === "true";
   const curlFetcher = options.curlFetcher ?? fetchJournalFeedWithCurl;
+  const crossrefFetcher = options.crossrefFetcher ?? fetchCrossrefJournalWorks;
   const papers: FeedPaper[] = [];
   const scheduledJournals = interleaveFeedsByPublisher(journals);
   const deferred: Array<{ journal: FetchableFeed; error: unknown }> = [];
@@ -760,6 +763,32 @@ export async function fetchJournalFeeds(
         console.log(
           `[RSS] ${logLabel} curl fallback failed: ${error instanceof Error ? error.message : String(error)}`
         );
+      }
+
+      if (journal.issn) {
+        try {
+          const works = await crossrefFetcher(journal.issn);
+          const fallbackPapers = works
+            .filter((work): work is CrossrefMetadata & { title: string } => Boolean(work.title))
+            .map((work) => ({
+              journal: feedLabel(journal),
+              title: work.title,
+              abstract: work.abstract ?? "",
+              url: work.url ?? `https://doi.org/${work.doi}`,
+              doi: work.doi,
+              publishedAt: work.publishedAt ?? null,
+              ...(work.authors?.length ? { authors: work.authors } : {})
+            }));
+          if (fallbackPapers.length > 0) {
+            papers.push(...fallbackPapers);
+            progress.step(`${logLabel}: ${fallbackPapers.length} papers (Crossref fallback)`);
+            continue;
+          }
+        } catch (error) {
+          console.log(
+            `[RSS] ${logLabel} Crossref fallback failed: ${error instanceof Error ? error.message : String(error)}`
+          );
+        }
       }
     }
 
