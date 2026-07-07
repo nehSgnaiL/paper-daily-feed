@@ -259,13 +259,13 @@ describe("normalizeFeedItem", () => {
           "Accept-Language": "en-US,en;q=0.9",
           "Cache-Control": "no-cache",
           Pragma: "no-cache",
-          "User-Agent": expect.stringContaining("paper-daily-feed")
+          "User-Agent": expect.stringContaining("Firefox/152.0")
         })
       })
     );
   });
 
-  it("samples from multiple RSS header profiles across RSS requests", async () => {
+  it("uses one stable browser identity across RSS requests", async () => {
     const fetchMock = vi.fn(async () => {
       return new Response(
         `<?xml version="1.0"?>
@@ -295,13 +295,12 @@ describe("normalizeFeedItem", () => {
       return (init.headers as Record<string, string>)["User-Agent"];
     });
 
-    expect(new Set(userAgents).size).toBeGreaterThan(1);
+    expect(new Set(userAgents)).toEqual(new Set(["Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0"]));
   });
 
-  it("rotates to browser headers after feed-reader header failures", async () => {
-    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
-      const userAgent = (init?.headers as Record<string, string>)["User-Agent"];
-      const status = userAgent.includes("paper-daily-feed") ? 403 : 200;
+  it("keeps the stable browser identity across retries", async () => {
+    const fetchMock = vi.fn(async () => {
+      const status = fetchMock.mock.calls.length === 1 ? 403 : 200;
       return new Response(
         `<?xml version="1.0"?>
         <rss version="2.0">
@@ -330,8 +329,7 @@ describe("normalizeFeedItem", () => {
       ([, init]) => (init.headers as Record<string, string>)["User-Agent"]
     );
     expect(papers).toHaveLength(1);
-    expect(userAgents[0]).toContain("paper-daily-feed");
-    expect(userAgents[1]).toContain("Mozilla/5.0");
+    expect(new Set(userAgents)).toEqual(new Set(["Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0"]));
   });
 
   it("rejects HTML challenge pages before XML parsing", async () => {

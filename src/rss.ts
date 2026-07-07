@@ -52,39 +52,18 @@ const RSS_COMMON_HEADERS = {
   Pragma: "no-cache"
 } satisfies RssHeaders;
 
-const RSS_BROWSER_NAVIGATION_HEADERS = {
+const RSS_BROWSER_HEADERS = {
   Connection: "keep-alive",
   DNT: "1",
-  Priority: "u=0, i",
   "Sec-Fetch-Dest": "document",
   "Sec-Fetch-Mode": "navigate",
   "Sec-Fetch-Site": "none",
   "Sec-Fetch-User": "?1",
-  "Upgrade-Insecure-Requests": "1"
+  "Upgrade-Insecure-Requests": "1",
+  "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:152.0) Gecko/20100101 Firefox/152.0"
 } satisfies RssHeaders;
 
-const RSS_HEADER_PROFILES: RssHeaders[] = [
-  {
-    "User-Agent": "paper-daily-feed/0.1.3 (+https://github.com/nehSgnaiL/paper-daily-feed)"
-  },
-  {
-    ...RSS_BROWSER_NAVIGATION_HEADERS,
-    "User-Agent":
-      "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/126.0.0.0 Safari/537.36",
-    "Sec-CH-UA": '"Chromium";v="126", "Google Chrome";v="126", "Not-A.Brand";v="99"',
-    "Sec-CH-UA-Mobile": "?0",
-    "Sec-CH-UA-Platform": '"Windows"'
-  },
-  {
-    ...RSS_BROWSER_NAVIGATION_HEADERS,
-    "User-Agent":
-      "Mozilla/5.0 (Macintosh; Intel Mac OS X 14_5) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/17.5 Safari/605.1.15"
-  },
-  {
-    ...RSS_BROWSER_NAVIGATION_HEADERS,
-    "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:127.0) Gecko/20100101 Firefox/127.0"
-  }
-];
+const RSS_HEADER_PROFILES: RssHeaders[] = [RSS_BROWSER_HEADERS];
 
 let rssHeaderProfileIndex = 0;
 
