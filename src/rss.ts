@@ -65,7 +65,7 @@ const RSS_BROWSER_NAVIGATION_HEADERS = {
 
 const RSS_HEADER_PROFILES: RssHeaders[] = [
   {
-    "User-Agent": "paper-daily-feed/0.1.2 (+https://github.com/nehSgnaiL/paper-daily-feed)"
+    "User-Agent": "paper-daily-feed/0.1.3 (+https://github.com/nehSgnaiL/paper-daily-feed)"
   },
   {
     ...RSS_BROWSER_NAVIGATION_HEADERS,

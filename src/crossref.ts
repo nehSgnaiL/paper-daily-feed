@@ -118,7 +118,7 @@ export async function fetchCrossrefWork(
   const response = await fetcher(url.toString(), {
     headers: {
       Accept: "application/json",
-      "User-Agent": "paper-daily-feed/0.1.2 (+https://github.com/nehSgnaiL/paper-daily-feed)"
+      "User-Agent": "paper-daily-feed/0.1.3 (+https://github.com/nehSgnaiL/paper-daily-feed)"
     }
   });
 
@@ -148,7 +148,7 @@ export async function fetchCrossrefJournalWorks(
   const response = await fetcher(url.toString(), {
     headers: {
       Accept: "application/json",
-      "User-Agent": "paper-daily-feed/0.1.2 (+https://github.com/nehSgnaiL/paper-daily-feed)"
+      "User-Agent": "paper-daily-feed/0.1.3 (+https://github.com/nehSgnaiL/paper-daily-feed)"
     }
   });
   if (!response.ok) {
