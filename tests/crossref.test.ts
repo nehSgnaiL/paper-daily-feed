@@ -1,7 +1,33 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchCrossrefWork, findDoi } from "../src/crossref.js";
+import { fetchCrossrefJournalWorks, fetchCrossrefWork, findDoi } from "../src/crossref.js";
 
 describe("Crossref metadata", () => {
+  it("retrieves recent works for a journal ISSN", async () => {
+    const fetcher = vi.fn(async (_input: string | URL | Request) =>
+      new Response(
+        JSON.stringify({
+          message: {
+            items: [
+              {
+                DOI: "10.1080/example",
+                title: ["Recent journal paper"],
+                URL: "https://doi.org/10.1080/example",
+                issued: { "date-parts": [[2026, 7, 1]] }
+              }
+            ]
+          }
+        }),
+        { status: 200 }
+      )
+    );
+
+    const works = await fetchCrossrefJournalWorks("2469-4460", { fetcher });
+
+    expect(fetcher).toHaveBeenCalledOnce();
+    expect(String(fetcher.mock.calls[0]?.[0])).toContain("journals/2469-4460/works");
+    expect(works).toMatchObject([{ doi: "10.1080/example", title: "Recent journal paper" }]);
+  });
+
   it("extracts DOI values from publisher URLs and text", () => {
     expect(findDoi("https://www.tandfonline.com/doi/full/10.1080/24694452.2025.2592754?af=R")).toBe(
       "10.1080/24694452.2025.2592754"

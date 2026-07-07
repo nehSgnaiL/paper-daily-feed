@@ -2,12 +2,14 @@ export type Journal = {
   name: string;
   abbr?: string;
   rss: string;
+  issn?: string;
 };
 
 export type FeedSource = {
   kind: "catalog" | "custom";
   name: string;
   rss: string;
+  issn?: string;
 };
 
 export type FeedPaper = {

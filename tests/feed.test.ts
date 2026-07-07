@@ -680,13 +680,103 @@ describe("normalizeFeedItem", () => {
       delayMs: 0,
       retryCount: 1,
       retryDelayMs: 0,
-      deferredRetryDelayMs: 0
+      deferredRetryDelayMs: 0,
+      curlFallback: false
     });
 
     const logs = logSpy.mock.calls.flat().join("\n");
     expect(papers).toHaveLength(0);
     expect(logs).toContain("[Springer] Nature Geoscience: 0 papers (publisher returned non-RSS response)");
     expect(logs).not.toContain("failed: Error");
+  });
+
+  it("uses the curl transport fallback after persistent publisher blocks", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const curlFetcher = vi.fn(async () => [
+      {
+        journal: "Nature Health",
+        title: "Paper recovered by curl",
+        abstract: "",
+        url: "https://example.test/recovered-paper",
+        publishedAt: new Date("2026-07-06")
+      }
+    ]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      })
+    );
+
+    const papers = await fetchJournalFeeds(
+      [{ name: "Nature Health", rss: "https://www.nature.com/naturehealth.rss" }],
+      {
+        delayMs: 0,
+        retryCount: 0,
+        deferredRetryDelayMs: 0,
+        curlFallback: true,
+        curlFetcher
+      }
+    );
+
+    expect(curlFetcher).toHaveBeenCalledOnce();
+    expect(papers).toHaveLength(1);
+    expect(logSpy.mock.calls.flat().join("\n")).toContain(
+      "[Springer] Nature Health: 1 papers (curl fallback)"
+    );
+  });
+
+  it("uses Crossref when a publisher blocks both fetch and curl", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const curlFetcher = vi.fn(async () => {
+      throw Object.assign(new Error("Command failed: curl --header verbose-command"), {
+        stderr: "curl: (22) The requested URL returned error: 403\n"
+      });
+    });
+    const crossrefFetcher = vi.fn(async () => [
+      {
+        doi: "10.1080/example",
+        title: "Paper recovered from Crossref",
+        authors: ["Ada Lovelace"],
+        publishedAt: new Date("2026-07-01"),
+        url: "https://doi.org/10.1080/example"
+      }
+    ]);
+    vi.stubGlobal("fetch", vi.fn(async () => new Response("blocked", { status: 403 })));
+
+    const papers = await fetchJournalFeeds(
+      [
+        {
+          kind: "catalog",
+          name: "AAAG",
+          rss: "https://www.tandfonline.com/feed/rss/raag21",
+          issn: "2469-4460"
+        }
+      ],
+      {
+        delayMs: 0,
+        retryCount: 0,
+        deferredRetryDelayMs: 0,
+        curlFallback: true,
+        curlFetcher,
+        crossrefFetcher
+      }
+    );
+
+    expect(crossrefFetcher).toHaveBeenCalledWith("2469-4460");
+    expect(papers).toMatchObject([
+      {
+        journal: "AAAG",
+        title: "Paper recovered from Crossref",
+        doi: "10.1080/example"
+      }
+    ]);
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(logs).toContain("curl fallback failed: curl: (22) The requested URL returned error: 403");
+    expect(logs).not.toContain("verbose-command");
   });
 
   it("defers publisher-blocked feeds and retries them after other feeds", async () => {

@@ -39,6 +39,12 @@ type CrossrefWorkResponse = {
   message?: CrossrefWorkMessage;
 };
 
+type CrossrefWorksResponse = {
+  message?: {
+    items?: CrossrefWorkMessage[];
+  };
+};
+
 type FetchCrossrefOptions = {
   fetcher?: Fetcher;
   mailto?: string;
@@ -122,4 +128,35 @@ export async function fetchCrossrefWork(
 
   const payload = (await response.json()) as CrossrefWorkResponse;
   return payload.message ? normalizeWork(payload.message) : null;
+}
+
+export async function fetchCrossrefJournalWorks(
+  issn: string,
+  { fetcher = fetch, mailto = "" }: FetchCrossrefOptions = {}
+): Promise<CrossrefMetadata[]> {
+  const fromDate = new Date();
+  fromDate.setUTCDate(fromDate.getUTCDate() - 90);
+  const url = new URL(`https://api.crossref.org/journals/${encodeURIComponent(issn)}/works`);
+  url.searchParams.set("filter", `from-pub-date:${fromDate.toISOString().slice(0, 10)}`);
+  url.searchParams.set("rows", "100");
+  url.searchParams.set("sort", "published");
+  url.searchParams.set("order", "desc");
+  if (mailto.trim()) {
+    url.searchParams.set("mailto", mailto.trim());
+  }
+
+  const response = await fetcher(url.toString(), {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "paper-daily-feed/0.1.2 (+https://github.com/nehSgnaiL/paper-daily-feed)"
+    }
+  });
+  if (!response.ok) {
+    return [];
+  }
+
+  const payload = (await response.json()) as CrossrefWorksResponse;
+  return (payload.message?.items ?? [])
+    .map(normalizeWork)
+    .filter((work): work is CrossrefMetadata => work !== null);
 }

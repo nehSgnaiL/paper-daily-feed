@@ -7,7 +7,8 @@ export function resolveFeedSources(catalog: Journal[], config: AppConfig["feeds"
   const catalogSources: FeedSource[] = selectedCatalog.map((journal) => ({
     kind: "catalog",
     name: journal.abbr ?? journal.name,
-    rss: journal.rss
+    rss: journal.rss,
+    ...(journal.issn ? { issn: journal.issn } : {})
   }));
 
   const customSources: FeedSource[] = config.customRss.map((feed) => ({
