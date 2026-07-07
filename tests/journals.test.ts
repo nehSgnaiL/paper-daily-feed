@@ -45,11 +45,12 @@ describe("bundled journal catalog", () => {
     "International Journal of Digital Earth"
   ];
 
-  it("keeps every bundled journal selectable and backed by an RSS URL", () => {
+  it("keeps every bundled journal selectable and backed by RSS and ISSN identifiers", () => {
     for (const journal of catalog) {
       expect(journal.name.trim()).toBe(journal.name);
       expect(journal.name.length).toBeGreaterThan(0);
       expect(journal.rss).toMatch(/^https:\/\//);
+      expect(journal.issn).toMatch(/^\d{4}-\d{3}[\dX]$/);
     }
   });
 
