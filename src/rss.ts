@@ -1,4 +1,6 @@
 import Parser from "rss-parser";
+import { execFile } from "node:child_process";
+import { promisify } from "node:util";
 import { createProgress } from "./progress.js";
 import type { FeedPaper, FeedSource, Journal } from "./types.js";
 import { stripHtml } from "./text.js";
@@ -109,6 +111,8 @@ type FetchJournalFeedsOptions = {
   retryCount?: number;
   retryDelayMs?: number;
   deferredRetryDelayMs?: number;
+  curlFallback?: boolean;
+  curlFetcher?: (journal: FetchableFeed) => Promise<FeedPaper[]>;
 };
 
 const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
@@ -118,6 +122,7 @@ const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
 const DEFAULT_RSS_RETRY_COUNT = 2;
 const DEFAULT_RSS_RETRY_DELAY_MS = 5_000;
 const DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS = 10_000;
+const execFileAsync = promisify(execFile);
 
 function wait(ms: number): Promise<void> {
   return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
@@ -647,10 +652,44 @@ async function fetchJournalFeedWithHeaders(journal: FetchableFeed, headers: RssH
     throw new Error(`Expected RSS/XML feed but received ${contentType ?? "unknown content type"}`);
   }
 
+  return parseFeedBody(journal, body);
+}
+
+async function parseFeedBody(journal: FetchableFeed, body: string): Promise<FeedPaper[]> {
+  if (!looksLikeFeedXml(body)) {
+    throw new Error("Expected RSS/XML feed but received non-XML body");
+  }
+
   const feed = await parser.parseString(body);
   return feed.items
     .map((item) => normalizeFeedItem(feedLabel(journal), item))
     .filter((paper): paper is FeedPaper => paper !== null);
+}
+
+async function fetchJournalFeedWithCurl(journal: FetchableFeed): Promise<FeedPaper[]> {
+  const headers = rssHeadersForProfile(RSS_HEADER_PROFILES[0] ?? {});
+  const args = [
+    "--location",
+    "--fail-with-body",
+    "--silent",
+    "--show-error",
+    "--connect-timeout",
+    "10",
+    "--max-time",
+    "30"
+  ];
+
+  for (const [name, value] of Object.entries(headers)) {
+    args.push("--header", `${name}: ${value}`);
+  }
+  args.push("--", journal.rss);
+
+  const { stdout } = await execFileAsync("curl", args, {
+    encoding: "utf8",
+    maxBuffer: 10 * 1024 * 1024,
+    timeout: 45_000
+  });
+  return parseFeedBody(journal, stdout);
 }
 
 export async function fetchJournalFeed(journal: FetchableFeed): Promise<FeedPaper[]> {
@@ -665,6 +704,8 @@ export async function fetchJournalFeeds(
   const retryCount = options.retryCount ?? DEFAULT_RSS_RETRY_COUNT;
   const retryDelayMs = options.retryDelayMs ?? DEFAULT_RSS_RETRY_DELAY_MS;
   const deferredRetryDelayMs = options.deferredRetryDelayMs ?? DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS;
+  const curlFallbackEnabled = options.curlFallback ?? process.env.GITHUB_ACTIONS === "true";
+  const curlFetcher = options.curlFetcher ?? fetchJournalFeedWithCurl;
   const papers: FeedPaper[] = [];
   const scheduledJournals = interleaveFeedsByPublisher(journals);
   const deferred: Array<{ journal: FetchableFeed; error: unknown }> = [];
@@ -707,6 +748,19 @@ export async function fetchJournalFeeds(
       papers.push(...result.papers);
       progress.step(`${logLabel}: ${result.papers.length} papers`);
       continue;
+    }
+
+    if (curlFallbackEnabled && publisherBlockReason(result.error)) {
+      try {
+        const fallbackPapers = await curlFetcher(journal);
+        papers.push(...fallbackPapers);
+        progress.step(`${logLabel}: ${fallbackPapers.length} papers (curl fallback)`);
+        continue;
+      } catch (error) {
+        console.log(
+          `[RSS] ${logLabel} curl fallback failed: ${error instanceof Error ? error.message : String(error)}`
+        );
+      }
     }
 
     const blockReason = publisherBlockReason(result.error) ?? publisherBlockReason(originalError);

@@ -689,6 +689,45 @@ describe("normalizeFeedItem", () => {
     expect(logs).not.toContain("failed: Error");
   });
 
+  it("uses the curl transport fallback after persistent publisher blocks", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const curlFetcher = vi.fn(async () => [
+      {
+        journal: "Nature Health",
+        title: "Paper recovered by curl",
+        abstract: "",
+        url: "https://example.test/recovered-paper",
+        publishedAt: new Date("2026-07-06")
+      }
+    ]);
+    vi.stubGlobal(
+      "fetch",
+      vi.fn(async () => {
+        return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
+          status: 200,
+          headers: { "Content-Type": "text/html; charset=utf-8" }
+        });
+      })
+    );
+
+    const papers = await fetchJournalFeeds(
+      [{ name: "Nature Health", rss: "https://www.nature.com/naturehealth.rss" }],
+      {
+        delayMs: 0,
+        retryCount: 0,
+        deferredRetryDelayMs: 0,
+        curlFallback: true,
+        curlFetcher
+      }
+    );
+
+    expect(curlFetcher).toHaveBeenCalledOnce();
+    expect(papers).toHaveLength(1);
+    expect(logSpy.mock.calls.flat().join("\n")).toContain(
+      "[Springer] Nature Health: 1 papers (curl fallback)"
+    );
+  });
+
   it("defers publisher-blocked feeds and retries them after other feeds", async () => {
     const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const requestedUrls: string[] = [];
