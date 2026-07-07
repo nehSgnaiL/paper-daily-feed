@@ -584,6 +584,20 @@ function publisherBlockReason(error: unknown): string | undefined {
   return undefined;
 }
 
+function conciseError(error: unknown): string {
+  const stderr =
+    typeof error === "object" && error !== null && "stderr" in error && typeof error.stderr === "string"
+      ? error.stderr.trim()
+      : "";
+  const message = stderr || (error instanceof Error ? error.message : String(error));
+  const line = message
+    .split(/\r?\n/)
+    .map((value) => value.trim())
+    .filter(Boolean)
+    .at(-1) ?? "unknown error";
+  return line.length > 200 ? `${line.slice(0, 197)}...` : line;
+}
+
 type FeedAttemptResult =
   | {
       status: "fulfilled";
@@ -760,9 +774,7 @@ export async function fetchJournalFeeds(
         progress.step(`${logLabel}: ${fallbackPapers.length} papers (curl fallback)`);
         continue;
       } catch (error) {
-        console.log(
-          `[RSS] ${logLabel} curl fallback failed: ${error instanceof Error ? error.message : String(error)}`
-        );
+        console.log(`[RSS] ${logLabel} curl fallback failed: ${conciseError(error)}`);
       }
 
       if (journal.issn) {
@@ -785,9 +797,7 @@ export async function fetchJournalFeeds(
             continue;
           }
         } catch (error) {
-          console.log(
-            `[RSS] ${logLabel} Crossref fallback failed: ${error instanceof Error ? error.message : String(error)}`
-          );
+          console.log(`[RSS] ${logLabel} Crossref fallback failed: ${conciseError(error)}`);
         }
       }
     }

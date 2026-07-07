@@ -730,8 +730,11 @@ describe("normalizeFeedItem", () => {
   });
 
   it("uses Crossref when a publisher blocks both fetch and curl", async () => {
+    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
     const curlFetcher = vi.fn(async () => {
-      throw new Error("curl: (22) 403");
+      throw Object.assign(new Error("Command failed: curl --header verbose-command"), {
+        stderr: "curl: (22) The requested URL returned error: 403\n"
+      });
     });
     const crossrefFetcher = vi.fn(async () => [
       {
@@ -771,6 +774,9 @@ describe("normalizeFeedItem", () => {
         doi: "10.1080/example"
       }
     ]);
+    const logs = logSpy.mock.calls.flat().join("\n");
+    expect(logs).toContain("curl fallback failed: curl: (22) The requested URL returned error: 403");
+    expect(logs).not.toContain("verbose-command");
   });
 
   it("defers publisher-blocked feeds and retries them after other feeds", async () => {
