@@ -680,7 +680,8 @@ describe("normalizeFeedItem", () => {
       delayMs: 0,
       retryCount: 1,
       retryDelayMs: 0,
-      deferredRetryDelayMs: 0
+      deferredRetryDelayMs: 0,
+      curlFallback: false
     });
 
     const logs = logSpy.mock.calls.flat().join("\n");
