@@ -190,7 +190,6 @@ GitHub 默认暂停 fork 仓库中的工作流。启用它们：
 <h2>本地运行</h2>
 
 本地配置是可选的。只有当你想在本机预览或自定义推送时才需要。
-本地运行需要安装 [Bun](https://bun.sh/) 1.3.14 或更高版本。
 
 <details close>
   <summary>本地配置说明</summary>

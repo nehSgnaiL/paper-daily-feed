@@ -18,13 +18,17 @@ describe("test paper feeds workflow", () => {
       packageManager?: string;
       dependencies?: Record<string, string>;
       devDependencies?: Record<string, string>;
+      engines?: Record<string, string>;
     };
     const bunfig = readFileSync("bunfig.toml", "utf8");
     const workflows = ["ci", "daily", "maintenance", "release", "test"].map((name) =>
       readFileSync(`.github/workflows/${name}.yml`, "utf8")
     );
 
-    expect(packageJson.packageManager).toBe("bun@1.3.14");
+    const bunVersion = packageJson.packageManager?.match(/^bun@(\d+\.\d+\.\d+)$/)?.[1];
+    expect(bunVersion).toBeDefined();
+    expect(packageJson.devDependencies?.["@types/bun"]).toBe(`^${bunVersion}`);
+    expect(packageJson.engines).toBeUndefined();
     expect(packageJson.dependencies).not.toHaveProperty("js-yaml");
     expect(packageJson.devDependencies).not.toHaveProperty("@types/js-yaml");
     expect(setupAction).toContain("uses: oven-sh/setup-bun@v2");

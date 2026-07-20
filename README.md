@@ -189,7 +189,6 @@ Any issues, questions, or experience could be shared via [raising issue](https:/
 <h2>Local Run</h2>
 
 Local setup is optional. Use it only if you want to preview or customize the feed on your local device.
-It requires [Bun](https://bun.sh/) 1.3.14 or newer.
 <details close>
   <summary>Local setup instructions</summary>
 

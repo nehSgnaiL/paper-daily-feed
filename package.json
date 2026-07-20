@@ -31,8 +31,5 @@
   },
   "trustedDependencies": [
     "onnxruntime-node"
-  ],
-  "engines": {
-    "bun": ">=1.3.14"
-  }
+  ]
 }
