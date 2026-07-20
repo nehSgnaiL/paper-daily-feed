@@ -1,2 +1,5 @@
+[install]
+auto = "disable"
+
 [test]
 root = "tests"

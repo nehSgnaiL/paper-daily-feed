@@ -5,17 +5,21 @@ runs:
   using: composite
   steps:
     - name: Setup Bun
+      id: setup
       uses: oven-sh/setup-bun@v2
-      with:
-        bun-version: 1.3.14
+
+    - name: Locate Bun package cache
+      id: cache_path
+      shell: bash
+      run: echo "dir=$(bun pm cache)" >> "$GITHUB_OUTPUT"
 
     - name: Restore Bun package cache
       uses: actions/cache@v5
       with:
-        path: ~/.bun/install/cache
-        key: ${{ runner.os }}-bun-1.3.14-${{ hashFiles('bun.lock') }}
+        path: ${{ steps.cache_path.outputs.dir }}
+        key: ${{ runner.os }}-bun-${{ steps.setup.outputs['bun-version'] }}-${{ hashFiles('bun.lock') }}
         restore-keys: |
-          ${{ runner.os }}-bun-1.3.14-
+          ${{ runner.os }}-bun-${{ steps.setup.outputs['bun-version'] }}-
 
     - name: Install dependencies
       shell: bash

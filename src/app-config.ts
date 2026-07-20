@@ -326,7 +326,7 @@ function resolveEnvReference(value: string, env: Env): string {
     return value;
   }
 
-  const envName = match[1];
+  const envName = match[1]!;
   const resolved = env[envName];
   if (resolved === undefined) {
     throw new Error(`Missing environment variable for app config secret reference: ${envName}.`);

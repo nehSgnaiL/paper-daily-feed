@@ -97,6 +97,6 @@ describe("createOpenAISummarizer", () => {
 
     const summarized = await summarizeRecommendedPapers(papers, async () => "A concise TLDR.");
 
-    expect(summarized[0].tldr).toBe("A concise TLDR.");
+    expect(summarized[0]!.tldr).toBe("A concise TLDR.");
   });
 });

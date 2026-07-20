@@ -13,7 +13,10 @@
     "allowImportingTsExtensions": true,
     "verbatimModuleSyntax": true,
     "types": ["bun"],
-    "noEmit": true
+    "noEmit": true,
+    "noFallthroughCasesInSwitch": true,
+    "noUncheckedIndexedAccess": true,
+    "noImplicitOverride": true
   },
   "include": ["src/**/*.ts", "data/**/*.ts", "tests/**/*.ts"]
 }

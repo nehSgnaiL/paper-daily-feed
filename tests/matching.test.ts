@@ -122,7 +122,7 @@ describe("rankPapers", () => {
         bestMatchTopics: ["transport", "equity"]
       }
     });
-    expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
+    expect(ranked[0]!.score).toBeGreaterThan(ranked[1]!.score);
   });
 
   it("deduplicates candidates by normalized URL and title before ranking", async () => {
@@ -235,9 +235,9 @@ describe("rankPapers", () => {
       "Single interest paper",
       "Weak broad paper"
     ]);
-    expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
-    expect(ranked[0].score).toBeLessThan(0.95);
-    expect(ranked[1].score).toBeCloseTo(ranked[2].score, 2);
+    expect(ranked[0]!.score).toBeGreaterThan(ranked[1]!.score);
+    expect(ranked[0]!.score).toBeLessThan(0.95);
+    expect(ranked[1]!.score).toBeCloseTo(ranked[2]!.score, 2);
   });
 
   it("penalizes papers that match negative interest atoms", async () => {
@@ -264,7 +264,7 @@ describe("rankPapers", () => {
     );
 
     expect(ranked.map((paper) => paper.title)).toEqual(["Desired method", "Avoided benchmark"]);
-    expect(ranked[1].score).toBeCloseTo(0.62, 2);
+    expect(ranked[1]!.score).toBeCloseTo(0.62, 2);
   });
 
   it("weights configured profile atoms above Zotero paper atoms", async () => {
@@ -296,7 +296,7 @@ describe("rankPapers", () => {
     );
 
     expect(ranked.map((paper) => paper.title)).toEqual(["Profile topic paper", "Zotero-only paper"]);
-    expect(ranked[0].score).toBeGreaterThan(ranked[1].score);
+    expect(ranked[0]!.score).toBeGreaterThan(ranked[1]!.score);
   });
 });
 

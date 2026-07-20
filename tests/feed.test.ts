@@ -535,7 +535,7 @@ describe("normalizeFeedItem", () => {
       { delayMs: 20 }
     );
 
-    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThanOrEqual(15);
+    expect(requestTimes[1]! - requestTimes[0]!).toBeGreaterThanOrEqual(15);
     expect(logSpy).toHaveBeenCalled();
   });
 
@@ -571,7 +571,7 @@ describe("normalizeFeedItem", () => {
       { delayRangeMs: { minMs: 20, maxMs: 40 } }
     );
 
-    expect(requestTimes[1] - requestTimes[0]).toBeGreaterThanOrEqual(25);
+    expect(requestTimes[1]! - requestTimes[0]!).toBeGreaterThanOrEqual(25);
     expect(randomSpy).toHaveBeenCalledTimes(2);
   });
 

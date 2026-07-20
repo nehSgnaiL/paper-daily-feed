@@ -1,4 +1,3 @@
-import { createHash } from "node:crypto";
 import { existsSync, readFileSync, writeFileSync } from "node:fs";
 import type { FeedPaper } from "./types.js";
 
@@ -78,7 +77,7 @@ function isValidEntry(value: unknown): value is DeliveryHistoryEntry {
 }
 
 function createPaperFingerprint(paper: Pick<FeedPaper, "title" | "url">, env: Env = process.env): string {
-  return createHash("sha256")
+  return new Bun.CryptoHasher("sha256")
     .update(`${historySalt(env)}::${normalizeUrl(paper.url)}::${normalizeTitle(paper.title)}`)
     .digest("hex");
 }
