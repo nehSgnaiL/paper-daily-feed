@@ -1,8 +1,3 @@
-import { config as loadDotenv } from "dotenv";
-import { pathToFileURL } from "node:url";
-
-loadDotenv({ path: [".env.local", ".env"], quiet: true });
-
 import { loadAppConfig } from "./app-config.js";
 import { parseCliMode, type CliMode } from "./cli.js";
 import { configSummaryLines } from "./config-summary.js";
@@ -56,7 +51,7 @@ export async function main(args: string[] = process.argv.slice(2), env: Env = pr
   await runPipeline(mode, env);
 }
 
-if (import.meta.url === pathToFileURL(process.argv[1] ?? "").href) {
+if (import.meta.main) {
   main().catch((error: unknown) => {
     console.error(error);
     process.exitCode = 1;

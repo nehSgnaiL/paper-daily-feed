@@ -1,14 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import {
   fetchZoteroInterestDocuments,
   filterCorpusByPath,
   normalizeZoteroInterestDocument,
   normalizeZoteroItem
 } from "../src/zotero.js";
+import { stubFetch } from "./test-support.js";
 
 afterEach(() => {
-  vi.restoreAllMocks();
-  vi.unstubAllGlobals();
+  mock.restore();
 });
 
 describe("normalizeZoteroItem", () => {
@@ -127,10 +127,10 @@ describe("normalizeZoteroInterestDocument", () => {
 
 describe("fetchZoteroInterestDocuments", () => {
   it("returns no documents without enabled Zotero credentials", async () => {
-    const fetchMock = vi.fn(() => {
+    const fetchMock = mock(() => {
       throw new Error("fetch should not be called");
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     await expect(
       fetchZoteroInterestDocuments(
@@ -173,10 +173,8 @@ describe("fetchZoteroInterestDocuments", () => {
   });
 
   it("logs Zotero pagination with progress bars when the API exposes totals", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    stubFetch(mock(async (input: string | URL | Request) => {
         const url = new URL(String(input));
         const resource = url.pathname.endsWith("/items/top") ? "items/top" : "collections";
         const start = Number(url.searchParams.get("start") ?? "0");

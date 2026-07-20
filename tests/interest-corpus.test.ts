@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import type { AppConfig, ProfileInterestConfig, ZoteroInterestConfig } from "../src/app-config.js";
 import { buildInterestCorpus } from "../src/interest-corpus.js";
 import { buildProfileInterestDocuments } from "../src/interest-profile.js";

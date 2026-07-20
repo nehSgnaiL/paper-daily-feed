@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import { repairRecommendationMetadata } from "../src/paper-metadata.js";
 import type { MetadataRepairConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
@@ -26,7 +26,7 @@ function paper(overrides: Partial<RecommendedPaper> = {}): RecommendedPaper {
 
 describe("repairRecommendationMetadata", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   it("keeps parsed metadata when repair is disabled", async () => {
@@ -69,7 +69,7 @@ describe("repairRecommendationMetadata", () => {
   });
 
   it("keeps current metadata when NER load fails or times out", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     const recommendations = [paper()];
 
     await expect(
@@ -94,7 +94,7 @@ describe("repairRecommendationMetadata", () => {
   });
 
   it("logs metadata repair progress and counts", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     const recommendations = [
       paper({
         authors: ["Jun Zhang Andrew Cox Jing Wang"],

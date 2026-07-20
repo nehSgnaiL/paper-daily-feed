@@ -1,22 +1,24 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import {
   createEmbedder,
   createOpenAICompatibleEmbedder,
   rankPapers,
-  type EmbedTexts
+  type EmbedTexts,
+  type LoadTransformers
 } from "../src/matching.js";
 import type { MatchingConfig } from "../src/app-config.js";
 import type { FeedSource, InterestDocument, MatchContext, RecommendedPaper } from "../src/types.js";
+import { stubFetch } from "./test-support.js";
 
-const pipelineMock = vi.fn();
+const pipelineMock = mock();
 const transformersEnvMock = {
   remoteHost: "https://huggingface.co/"
 };
 
-vi.mock("@huggingface/transformers", () => ({
+const loadTransformers = (async () => ({
   env: transformersEnvMock,
   pipeline: pipelineMock
-}));
+})) as unknown as LoadTransformers;
 
 const matchingConfig: MatchingConfig = {
   provider: "api",
@@ -125,7 +127,7 @@ describe("rankPapers", () => {
 
   it("deduplicates candidates by normalized URL and title before ranking", async () => {
     const duplicate = candidate("Transit Access ", "First copy.", " HTTPS://EXAMPLE.TEST/TRANSIT ");
-    const embedTexts: EmbedTexts = vi.fn(async () => [
+    const embedTexts: EmbedTexts = mock(async () => [
       [1, 0],
       [1, 0]
     ]);
@@ -300,18 +302,17 @@ describe("rankPapers", () => {
 
 describe("createOpenAICompatibleEmbedder", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
+    mock.restore();
   });
 
   it("passes model, body, and authorization header to the embeddings API", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       return new Response(JSON.stringify({ data: [{ index: 0, embedding: [1, 0] }] }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const embedTexts = await createOpenAICompatibleEmbedder(matchingConfig.api, "embedding-key");
 
@@ -335,7 +336,7 @@ describe("createOpenAICompatibleEmbedder", () => {
   });
 
   it("batches requests and sorts returned vectors by index", async () => {
-    const fetchMock = vi.fn(async (_url: string, init?: RequestInit) => {
+    const fetchMock = mock(async (_url: string, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body)) as { input: string[] };
       return new Response(
         JSON.stringify({
@@ -347,7 +348,7 @@ describe("createOpenAICompatibleEmbedder", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const embedTexts = await createOpenAICompatibleEmbedder(matchingConfig.api, "");
 
@@ -365,23 +366,22 @@ describe("createOpenAICompatibleEmbedder", () => {
 
 describe("createEmbedder", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
-    vi.unstubAllGlobals();
+    mock.restore();
     delete process.env.HF_ENDPOINT;
     transformersEnvMock.remoteHost = "https://huggingface.co/";
     pipelineMock.mockReset();
   });
 
   it("uses the API embedder when provider, base URL, and API key are configured", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       return new Response(JSON.stringify({ data: [{ index: 0, embedding: [1, 0] }] }), {
         status: 200,
         headers: { "Content-Type": "application/json" }
       });
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
-    const embedTexts = await createEmbedder(matchingConfig);
+    const embedTexts = await createEmbedder(matchingConfig, loadTransformers);
 
     await embedTexts(["urban mobility"]);
 
@@ -390,16 +390,19 @@ describe("createEmbedder", () => {
   });
 
   it("falls back to the local embedder when the API key is missing", async () => {
-    const extractor = vi.fn(async () => ({ tolist: () => [[0.5, 0.5]] }));
+    const extractor = mock(async () => ({ tolist: () => [[0.5, 0.5]] }));
     pipelineMock.mockResolvedValue(extractor);
 
-    const embedTexts = await createEmbedder({
-      ...matchingConfig,
-      api: {
-        ...matchingConfig.api,
-        apiKey: ""
-      }
-    });
+    const embedTexts = await createEmbedder(
+      {
+        ...matchingConfig,
+        api: {
+          ...matchingConfig.api,
+          apiKey: ""
+        }
+      },
+      loadTransformers
+    );
 
     await expect(embedTexts(["local text"])).resolves.toEqual([[0.5, 0.5]]);
     expect(pipelineMock).toHaveBeenCalledWith("feature-extraction", "local-embedding-test", { dtype: "fp32" });
@@ -410,13 +413,16 @@ describe("createEmbedder", () => {
     pipelineMock.mockRejectedValue(new TypeError("fetch failed"));
 
     await expect(
-      createEmbedder({
-        ...matchingConfig,
-        api: {
-          ...matchingConfig.api,
-          apiKey: ""
-        }
-      })
+      createEmbedder(
+        {
+          ...matchingConfig,
+          api: {
+            ...matchingConfig.api,
+            apiKey: ""
+          }
+        },
+        loadTransformers
+      )
     ).rejects.toThrow(
       'Failed to load local embedding model "local-embedding-test". Set matching.api.apiKey/EMBEDDING_API_KEY'
     );
@@ -424,13 +430,16 @@ describe("createEmbedder", () => {
 
   it("uses HF_ENDPOINT for local model downloads when configured", async () => {
     process.env.HF_ENDPOINT = "https://hf-mirror.com";
-    const extractor = vi.fn(async () => ({ tolist: () => [[0.5, 0.5]] }));
+    const extractor = mock(async () => ({ tolist: () => [[0.5, 0.5]] }));
     pipelineMock.mockResolvedValue(extractor);
 
-    const embedTexts = await createEmbedder({
-      ...matchingConfig,
-      provider: "local"
-    });
+    const embedTexts = await createEmbedder(
+      {
+        ...matchingConfig,
+        provider: "local"
+      },
+      loadTransformers
+    );
 
     await expect(embedTexts(["local text"])).resolves.toEqual([[0.5, 0.5]]);
     expect(transformersEnvMock.remoteHost).toBe("https://hf-mirror.com/");

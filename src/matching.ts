@@ -2,11 +2,17 @@ import type { MatchingConfig } from "./app-config.js";
 import {
   createLocalEmbedder,
   createOpenAICompatibleEmbedder,
-  type EmbedTexts
+  type EmbedTexts,
+  type LoadTransformers
 } from "./embeddings.js";
 import type { FeedPaper, InterestDocument, MatchContext, RecommendedPaper } from "./types.js";
 
-export { createLocalEmbedder, createOpenAICompatibleEmbedder, type EmbedTexts } from "./embeddings.js";
+export {
+  createLocalEmbedder,
+  createOpenAICompatibleEmbedder,
+  type EmbedTexts,
+  type LoadTransformers
+} from "./embeddings.js";
 
 export type MatchingProviderResolution = {
   active: "api" | "local";
@@ -38,11 +44,14 @@ export function resolveMatchingProvider(config: MatchingConfig): MatchingProvide
   return { active: "api", model: config.api.model, label: "API embeddings" };
 }
 
-export async function createEmbedder(config: MatchingConfig): Promise<EmbedTexts> {
+export async function createEmbedder(
+  config: MatchingConfig,
+  loadTransformers?: LoadTransformers
+): Promise<EmbedTexts> {
   const provider = resolveMatchingProvider(config);
   return provider.active === "api"
     ? createOpenAICompatibleEmbedder(config.api, config.api.apiKey.trim())
-    : createLocalEmbedder(config.local);
+    : createLocalEmbedder(config.local, loadTransformers);
 }
 
 function paperText(paper: Pick<FeedPaper, "title" | "abstract">): string {

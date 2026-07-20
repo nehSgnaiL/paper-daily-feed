@@ -1,7 +1,8 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { createOpenAISummarizer, summarizeRecommendedPapers } from "../src/summary.js";
 import type { SummaryConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
+import { stubFetch } from "./test-support.js";
 
 const summaryConfig: SummaryConfig = {
   enabled: true,
@@ -14,11 +15,11 @@ const summaryConfig: SummaryConfig = {
 
 describe("createOpenAISummarizer", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   it("passes the configured generation model as the chat completion model parameter", async () => {
-    const fetchMock = vi.fn(async (_url: string, _init?: RequestInit) => {
+    const fetchMock = mock(async (_url: string, _init?: RequestInit) => {
       return new Response(
         JSON.stringify({
           choices: [{ message: { content: "A concise TLDR." } }]
@@ -29,7 +30,7 @@ describe("createOpenAISummarizer", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const summarize = createOpenAISummarizer(summaryConfig);
 

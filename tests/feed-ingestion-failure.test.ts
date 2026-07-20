@@ -1,27 +1,34 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import { ingestFeedPapers } from "../src/feed-ingestion.js";
+import { stubFetch } from "./test-support.js";
 
 afterEach(() => {
-  vi.useRealTimers();
-  vi.restoreAllMocks();
+  mock.restore();
 });
 
 describe("feed ingestion failures", () => {
   it("fails the run when every configured Feed Source fails", async () => {
-    vi.useFakeTimers();
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("unavailable", { status: 503 })));
+    stubFetch(mock(async () => new Response("unavailable", { status: 503 })));
 
-    const result = ingestFeedPapers(
-      [],
-      {
-        includeCatalog: false,
-        catalogSelections: [],
-        customRss: [{ name: "Broken feed", rss: "https://example.test/feed.xml" }]
-      },
-      7
-    );
-    const expectation = expect(result).rejects.toThrow("All 1 configured Feed Sources failed");
-    await vi.runAllTimersAsync();
-    await expectation;
+    await expect(
+      ingestFeedPapers(
+        [],
+        {
+          includeCatalog: false,
+          catalogSelections: [],
+          customRss: [{ name: "Broken feed", rss: "https://example.test/feed.xml" }]
+        },
+        7,
+        new Date(),
+        {
+          fetchOptions: {
+            retryCount: 0,
+            retryDelayMs: 0,
+            deferredRetryDelayMs: 0,
+            curlFallback: false
+          }
+        }
+      )
+    ).rejects.toThrow("All 1 configured Feed Sources failed");
   });
 });

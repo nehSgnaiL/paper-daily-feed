@@ -1,13 +1,14 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock, spyOn } from "bun:test";
 import {
   fetchFeedSource as fetchJournalFeed,
   fetchFeedSources as fetchJournalFeeds,
   normalizeFeedItem
 } from "../src/rss.js";
+import { stubFetch } from "./test-support.js";
 
 describe("normalizeFeedItem", () => {
   afterEach(() => {
-    vi.restoreAllMocks();
+    mock.restore();
   });
 
   it("converts RSS parser items into feed papers", () => {
@@ -227,7 +228,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("fetches RSS feeds with RSS-compatible headers", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       return new Response(
         `<?xml version="1.0"?>
         <rss version="2.0">
@@ -247,7 +248,7 @@ describe("normalizeFeedItem", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const papers = await fetchJournalFeed({
       kind: "catalog",
@@ -271,7 +272,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("uses one stable browser identity across RSS requests", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       return new Response(
         `<?xml version="1.0"?>
         <rss version="2.0">
@@ -289,7 +290,7 @@ describe("normalizeFeedItem", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     await fetchJournalFeed({ kind: "catalog", name: "Nature", rss: "https://www.nature.com/nature.rss" });
     await fetchJournalFeed({ kind: "catalog", name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" });
@@ -304,7 +305,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("keeps the stable browser identity across retries", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       const status = fetchMock.mock.calls.length === 1 ? 403 : 200;
       return new Response(
         `<?xml version="1.0"?>
@@ -323,7 +324,7 @@ describe("normalizeFeedItem", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const papers = await fetchJournalFeeds([{ kind: "catalog", name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" }], {
       delayMs: 0,
@@ -338,9 +339,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("rejects HTML challenge pages before XML parsing", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         return new Response("<!DOCTYPE html><html><title>Challenge</title></html>", {
           status: 200,
           headers: { "Content-Type": "text/html; charset=utf-8" }
@@ -358,9 +357,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("uses feed source names as fetched paper labels", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         return new Response(
           `<?xml version="1.0"?>
           <rss version="2.0">
@@ -396,9 +393,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("carries the Feed Source publisher into metadata normalization", async () => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () =>
+    stubFetch(mock(async () =>
         new Response(
           `<?xml version="1.0"?>
           <rss version="2.0" xmlns:dc="http://purl.org/dc/elements/1.1/">
@@ -429,10 +424,8 @@ describe("normalizeFeedItem", () => {
   });
 
   it("logs publisher context while loading RSS feeds", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    stubFetch(mock(async () => {
         return new Response(
           `<?xml version="1.0"?>
           <rss version="2.0">
@@ -471,11 +464,9 @@ describe("normalizeFeedItem", () => {
   });
 
   it("loads RSS feeds without concurrent publisher requests", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     let activeRequests = 0;
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         activeRequests += 1;
         await new Promise((resolve) => setTimeout(resolve, 1));
         const status = activeRequests > 1 ? 403 : 200;
@@ -513,11 +504,9 @@ describe("normalizeFeedItem", () => {
   });
 
   it("waits between RSS feed requests when configured", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     const requestTimes: number[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         requestTimes.push(Date.now());
         return new Response(
           `<?xml version="1.0"?>
@@ -551,11 +540,9 @@ describe("normalizeFeedItem", () => {
   });
 
   it("samples variable RSS feed delays from a configured range", async () => {
-    const randomSpy = vi.spyOn(Math, "random").mockReturnValueOnce(0).mockReturnValueOnce(1);
+    const randomSpy = spyOn(Math, "random").mockReturnValueOnce(0).mockReturnValueOnce(1);
     const requestTimes: number[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         requestTimes.push(Date.now());
         return new Response(
           `<?xml version="1.0"?>
@@ -590,9 +577,7 @@ describe("normalizeFeedItem", () => {
 
   it("interleaves publishers while loading RSS feeds", async () => {
     const requestedUrls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+    stubFetch(mock(async (input: string | URL | Request) => {
         requestedUrls.push(String(input));
         return new Response(
           `<?xml version="1.0"?>
@@ -632,8 +617,8 @@ describe("normalizeFeedItem", () => {
   });
 
   it("retries temporary RSS status failures while loading multiple feeds", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const fetchMock = vi.fn(async () => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    const fetchMock = mock(async () => {
       const status = fetchMock.mock.calls.length === 1 ? 403 : 200;
       return new Response(
         `<?xml version="1.0"?>
@@ -652,7 +637,7 @@ describe("normalizeFeedItem", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const papers = await fetchJournalFeeds([{ kind: "catalog", name: "AAAG", rss: "https://www.tandfonline.com/feed/rss/raag21" }], {
       delayMs: 0,
@@ -665,7 +650,7 @@ describe("normalizeFeedItem", () => {
   });
 
   it("retries temporary HTML challenge pages while loading multiple feeds", async () => {
-    const fetchMock = vi.fn(async () => {
+    const fetchMock = mock(async () => {
       if (fetchMock.mock.calls.length === 1) {
         return new Response("<!DOCTYPE html><html><title>Challenge</title></html>", {
           status: 200,
@@ -690,7 +675,7 @@ describe("normalizeFeedItem", () => {
         }
       );
     });
-    vi.stubGlobal("fetch", fetchMock);
+    stubFetch(fetchMock);
 
     const papers = await fetchJournalFeeds([{ kind: "catalog", name: "Nature Health", rss: "https://www.nature.com/naturehealth.rss" }], {
       delayMs: 0,
@@ -702,10 +687,8 @@ describe("normalizeFeedItem", () => {
   });
 
   it("fails when the only Feed Source remains blocked", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    stubFetch(mock(async () => {
         return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
           status: 200,
           headers: { "Content-Type": "text/html; charset=utf-8" }
@@ -729,8 +712,8 @@ describe("normalizeFeedItem", () => {
   });
 
   it("uses the curl transport fallback after persistent publisher blocks", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const curlFetcher = vi.fn(async () => [
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    const curlFetcher = mock(async () => [
       {
         journal: "Nature Health",
         title: "Paper recovered by curl",
@@ -739,9 +722,7 @@ describe("normalizeFeedItem", () => {
         publishedAt: new Date("2026-07-06")
       }
     ]);
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         return new Response("<!DOCTYPE html><html><title>Client Challenge</title></html>", {
           status: 200,
           headers: { "Content-Type": "text/html; charset=utf-8" }
@@ -760,21 +741,59 @@ describe("normalizeFeedItem", () => {
       }
     );
 
-    expect(curlFetcher).toHaveBeenCalledOnce();
+    expect(curlFetcher).toHaveBeenCalledTimes(1);
     expect(papers).toHaveLength(1);
     expect(logSpy.mock.calls.flat().join("\n")).toContain(
       "[Springer] Nature Health: 1 papers (curl fallback)"
     );
   });
 
+  it("runs the default curl fallback through Bun.spawn", async () => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    const rss = `<?xml version="1.0"?>
+      <rss version="2.0">
+        <channel>
+          <title>Recovered feed</title>
+          <item>
+            <title>Paper recovered by Bun.spawn</title>
+            <link>https://example.test/bun-spawn</link>
+          </item>
+        </channel>
+      </rss>`;
+    const spawn = spyOn(Bun, "spawn").mockReturnValue({
+      stdout: new Blob([rss]).stream(),
+      stderr: new Blob([]).stream(),
+      exited: Promise.resolve(0),
+      kill: mock()
+    } as never);
+    stubFetch(mock(async () => new Response("blocked", { status: 403 })));
+
+    const papers = await fetchJournalFeeds(
+      [{ kind: "custom", name: "Recovered feed", rss: "https://example.test/feed.xml" }],
+      {
+        delayMs: 0,
+        retryCount: 0,
+        deferredRetryDelayMs: 0,
+        curlFallback: true
+      }
+    );
+
+    expect(spawn).toHaveBeenCalledTimes(1);
+    expect(spawn.mock.calls[0]?.[0]).toEqual(
+      expect.arrayContaining(["curl", "--location", "--", "https://example.test/feed.xml"])
+    );
+    expect(papers).toMatchObject([{ title: "Paper recovered by Bun.spawn" }]);
+    expect(logSpy.mock.calls.flat().join("\n")).toContain("Recovered feed: 1 papers (curl fallback)");
+  });
+
   it("uses Crossref when a publisher blocks both fetch and curl", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
-    const curlFetcher = vi.fn(async () => {
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
+    const curlFetcher = mock(async () => {
       throw Object.assign(new Error("Command failed: curl --header verbose-command"), {
         stderr: "curl: (22) The requested URL returned error: 403\n"
       });
     });
-    const crossrefFetcher = vi.fn(async () => [
+    const crossrefFetcher = mock(async () => [
       {
         doi: "10.1080/example",
         title: "Paper recovered from Crossref",
@@ -783,7 +802,7 @@ describe("normalizeFeedItem", () => {
         url: "https://doi.org/10.1080/example"
       }
     ]);
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("blocked", { status: 403 })));
+    stubFetch(mock(async () => new Response("blocked", { status: 403 })));
 
     const papers = await fetchJournalFeeds(
       [
@@ -818,11 +837,9 @@ describe("normalizeFeedItem", () => {
   });
 
   it("defers publisher-blocked feeds and retries them after other feeds", async () => {
-    const logSpy = vi.spyOn(console, "log").mockImplementation(() => undefined);
+    const logSpy = spyOn(console, "log").mockImplementation(() => undefined);
     const requestedUrls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+    stubFetch(mock(async (input: string | URL | Request) => {
         const url = String(input);
         requestedUrls.push(url);
         const isFirstNatureAttempt =
@@ -876,9 +893,7 @@ describe("normalizeFeedItem", () => {
 
   it("defers publisher-blocked feeds without immediate same-feed retries", async () => {
     const requestedUrls: string[] = [];
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+    stubFetch(mock(async (input: string | URL | Request) => {
         const url = String(input);
         requestedUrls.push(url);
 
@@ -929,9 +944,7 @@ describe("normalizeFeedItem", () => {
 
   it("waits between deferred publisher retries", async () => {
     const requestTimesByUrl = new Map<string, number[]>();
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async (input: string | URL | Request) => {
+    stubFetch(mock(async (input: string | URL | Request) => {
         const url = String(input);
         requestTimesByUrl.set(url, [...(requestTimesByUrl.get(url) ?? []), Date.now()]);
         const isFirstAttempt = (requestTimesByUrl.get(url) ?? []).length === 1;
@@ -1103,9 +1116,7 @@ describe("normalizeFeedItem", () => {
       expectedDate: new Date("2026-04-24T00:00:00.000Z")
     }
   ])("parses representative $label RSS metadata", async ({ label, xml, expectedAuthors, expectedDate }) => {
-    vi.stubGlobal(
-      "fetch",
-      vi.fn(async () => {
+    stubFetch(mock(async () => {
         return new Response(xml, {
           status: 200,
           headers: { "Content-Type": "application/rss+xml" }
@@ -1126,7 +1137,7 @@ describe("normalizeFeedItem", () => {
       publishedAt: expectedDate
     });
     if (expectedAuthors) {
-      expect(papers[0]?.authors).toEqual(expectedAuthors);
+      expect(papers[0]?.authors).toEqual([...expectedAuthors]);
     }
   });
 });

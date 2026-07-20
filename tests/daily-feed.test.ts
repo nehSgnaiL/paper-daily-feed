@@ -1,55 +1,48 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import type { AppConfig } from "../src/app-config.js";
+import { runDailyFeed, type DailyFeedDependencies } from "../src/daily-feed.js";
 import type { FeedPaper, InterestDocument, RecommendedPaper } from "../src/types.js";
 
-const corpusMock = vi.hoisted(() => ({
-  buildInterestCorpus: vi.fn()
-}));
-const feedMock = vi.hoisted(() => ({
-  fetchRecentFeedPapers: vi.fn()
-}));
-const matchingMock = vi.hoisted(() => ({
-  rankPapers: vi.fn(),
-  resolveMatchingProvider: vi.fn(() => ({
+const corpusMock = {
+  buildInterestCorpus: mock()
+};
+const feedMock = {
+  fetchRecentFeedPapers: mock()
+};
+const matchingMock = {
+  rankPapers: mock(),
+  resolveMatchingProvider: mock(() => ({
     active: "api",
     model: "text-embedding-test",
     label: "API embeddings"
   }))
-}));
-const metadataEnrichmentMock = vi.hoisted(() => ({
-  enrichFeedPaperMetadata: vi.fn()
-}));
-const metadataRepairMock = vi.hoisted(() => ({
-  repairRecommendationMetadata: vi.fn()
-}));
-const emailMock = vi.hoisted(() => ({
-  sendEmail: vi.fn()
-}));
-const historySessionMock = vi.hoisted(() => ({
-  filterUndeliveredPapers: vi.fn(),
-  confirmSuccessfulDelivery: vi.fn()
-}));
-const historyMock = vi.hoisted(() => ({
-  openDeliveryHistory: vi.fn(() => historySessionMock)
-}));
+};
+const metadataEnrichmentMock = {
+  enrichFeedPaperMetadata: mock()
+};
+const metadataRepairMock = {
+  repairRecommendationMetadata: mock()
+};
+const emailMock = {
+  sendEmail: mock()
+};
+const historySessionMock = {
+  filterUndeliveredPapers: mock(),
+  confirmSuccessfulDelivery: mock()
+};
+const historyMock = {
+  openDeliveryHistory: mock(() => historySessionMock)
+};
 
-vi.mock("../src/interest-corpus.js", () => corpusMock);
-vi.mock("../src/feed-ingestion.js", () => feedMock);
-vi.mock("../src/matching.js", () => matchingMock);
-vi.mock("../src/paper-metadata.js", () => ({
+const dependencies = {
+  ...corpusMock,
+  ...feedMock,
+  ...matchingMock,
   ...metadataEnrichmentMock,
-  ...metadataRepairMock
-}));
-vi.mock("../src/email.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/email.js")>();
-  return {
-    ...actual,
-    sendEmail: emailMock.sendEmail
-  };
-});
-vi.mock("../src/delivery-history.js", () => historyMock);
-
-const { runDailyFeed } = await import("../src/daily-feed.js");
+  ...metadataRepairMock,
+  ...historyMock,
+  delivery: emailMock
+} as unknown as DailyFeedDependencies;
 
 function config(overrides: Partial<AppConfig> = {}): AppConfig {
   return {
@@ -157,7 +150,7 @@ const interest: InterestDocument = {
 
 describe("runDailyFeed delivery history", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.clearAllMocks();
     historySessionMock.filterUndeliveredPapers.mockImplementation((papers: FeedPaper[]) => papers.slice(1));
     corpusMock.buildInterestCorpus.mockResolvedValue([interest]);
     feedMock.fetchRecentFeedPapers.mockResolvedValue([paper("Delivered"), paper("Fresh")]);
@@ -170,7 +163,7 @@ describe("runDailyFeed delivery history", () => {
   });
 
   it("filters delivered papers before ranking and saves history after successful delivery", async () => {
-    const result = await runDailyFeed("run", {}, config());
+    const result = await runDailyFeed("run", {}, config(), dependencies);
 
     expect(historyMock.openDeliveryHistory).toHaveBeenCalledWith({ env: {} });
     expect(historySessionMock.filterUndeliveredPapers).toHaveBeenCalledWith([
@@ -204,8 +197,8 @@ describe("runDailyFeed delivery history", () => {
   });
 
   it("does not save history for preview or debug runs", async () => {
-    await runDailyFeed("preview-email", {}, config());
-    await runDailyFeed("run", {}, config({ runtime: { debug: true, sendEmpty: false } }));
+    await runDailyFeed("preview-email", {}, config(), dependencies);
+    await runDailyFeed("run", {}, config({ runtime: { debug: true, sendEmpty: false } }), dependencies);
 
     expect(historySessionMock.filterUndeliveredPapers).toHaveBeenCalledTimes(2);
     expect(historySessionMock.confirmSuccessfulDelivery).not.toHaveBeenCalled();
@@ -214,7 +207,7 @@ describe("runDailyFeed delivery history", () => {
   it("does not save history when delivery fails", async () => {
     emailMock.sendEmail.mockRejectedValue(new Error("smtp down"));
 
-    await expect(runDailyFeed("run", {}, config())).rejects.toThrow("smtp down");
+    await expect(runDailyFeed("run", {}, config(), dependencies)).rejects.toThrow("smtp down");
 
     expect(historySessionMock.confirmSuccessfulDelivery).not.toHaveBeenCalled();
   });
@@ -224,10 +217,10 @@ describe("runDailyFeed delivery history", () => {
       throw new Error("Delivery may have succeeded, but Delivery History could not be saved: disk full");
     });
 
-    await expect(runDailyFeed("run", {}, config())).rejects.toThrow(
+    await expect(runDailyFeed("run", {}, config(), dependencies)).rejects.toThrow(
       "Delivery may have succeeded, but Delivery History could not be saved"
     );
 
-    expect(emailMock.sendEmail).toHaveBeenCalledOnce();
+    expect(emailMock.sendEmail).toHaveBeenCalledTimes(1);
   });
 });

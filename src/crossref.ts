@@ -1,6 +1,6 @@
 import { stripHtml } from "./text.js";
 
-type Fetcher = typeof fetch;
+type Fetcher = (input: string | URL | Request, init?: RequestInit) => Promise<Response>;
 
 export type CrossrefMetadata = {
   doi: string;

@@ -1,6 +1,9 @@
 import type { MatchingConfig } from "./app-config.js";
 
 export type EmbedTexts = (texts: string[]) => Promise<number[][]>;
+export type LoadTransformers = () => Promise<typeof import("@huggingface/transformers")>;
+
+const loadTransformers: LoadTransformers = () => import("@huggingface/transformers");
 
 function batchSizeOrDefault(batchSize: number | undefined, defaultValue: number): number {
   return Number.isFinite(batchSize) && batchSize && batchSize > 0 ? batchSize : defaultValue;
@@ -50,10 +53,13 @@ export async function createOpenAICompatibleEmbedder(
   };
 }
 
-export async function createLocalEmbedder(config: MatchingConfig["local"]): Promise<EmbedTexts> {
+export async function createLocalEmbedder(
+  config: MatchingConfig["local"],
+  load: LoadTransformers = loadTransformers
+): Promise<EmbedTexts> {
   let extractor: Awaited<ReturnType<typeof import("@huggingface/transformers").pipeline>>;
   try {
-    const { env, pipeline } = await import("@huggingface/transformers");
+    const { env, pipeline } = await load();
     const hfEndpoint = process.env.HF_ENDPOINT?.trim();
     if (hfEndpoint) {
       env.remoteHost = hfEndpoint.endsWith("/") ? hfEndpoint : `${hfEndpoint}/`;
@@ -81,4 +87,3 @@ export async function createLocalEmbedder(config: MatchingConfig["local"]): Prom
     return embeddings;
   };
 }
-

@@ -1,14 +1,7 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
-import nodemailer from "nodemailer";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 import { renderEmail, sendEmail } from "../src/email.js";
 import type { DeliveryConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
-
-vi.mock("nodemailer", () => ({
-  default: {
-    createTransport: vi.fn()
-  }
-}));
 
 describe("renderEmail", () => {
   it("renders recommended papers with journal, score, link, authors, affiliation, and abstract excerpt fallback", () => {
@@ -120,19 +113,19 @@ describe("sendEmail", () => {
   };
 
   beforeEach(() => {
-    vi.clearAllMocks();
+    mock.clearAllMocks();
   });
 
   it("configures bounded SMTP timeouts and sends to the configured receiver", async () => {
-    const sendMail = vi.fn().mockResolvedValue({
+    const sendMail = mock().mockResolvedValue({
       messageId: "message-id",
       accepted: ["receiver@example.test"]
     });
-    vi.mocked(nodemailer.createTransport).mockReturnValue({ sendMail } as never);
+    const createTransport = mock(() => ({ sendMail } as never));
 
-    const result = await sendEmail(delivery, "<p>Hello</p>", "Subject");
+    const result = await sendEmail(delivery, "<p>Hello</p>", "Subject", createTransport);
 
-    expect(nodemailer.createTransport).toHaveBeenCalledWith(
+    expect(createTransport).toHaveBeenCalledWith(
       expect.objectContaining({
         host: "smtp.example.test",
         port: 465,

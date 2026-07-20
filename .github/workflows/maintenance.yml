@@ -256,16 +256,9 @@ jobs:
           echo "manual_reason=test" >> "$GITHUB_OUTPUT"
           echo "manual_details=" >> "$GITHUB_OUTPUT"
 
-      - name: Setup Node.js for maintenance notification
+      - name: Setup Bun project for maintenance notification
         if: ${{ always() && (steps.sync.outputs.manual_reason != '' || steps.test.outputs.manual_reason != '') }}
-        uses: actions/setup-node@v6
-        with:
-          node-version: 22
-          cache: npm
-
-      - name: Install notification dependencies
-        if: ${{ always() && (steps.sync.outputs.manual_reason != '' || steps.test.outputs.manual_reason != '') }}
-        run: npm ci
+        uses: ./.github/actions/setup-bun
 
       - name: Send bilingual maintenance notification
         if: ${{ always() && (steps.sync.outputs.manual_reason != '' || steps.test.outputs.manual_reason != '') }}
@@ -279,4 +272,4 @@ jobs:
           RECEIVER: ${{ secrets.RECEIVER }}
           SMTP_SERVER: ${{ secrets.SMTP_SERVER }}
           SMTP_PORT: ${{ secrets.SMTP_PORT }}
-        run: npm start -- notify-maintenance
+        run: bun src/index.ts notify-maintenance

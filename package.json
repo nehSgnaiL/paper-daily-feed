@@ -4,37 +4,39 @@
   "private": true,
   "license": "AGPL-3.0-only",
   "type": "module",
+  "packageManager": "bun@1.3.14",
   "scripts": {
-    "build": "tsc --noEmit",
-    "test": "vitest run",
-    "test:email": "vitest run tests/email.test.ts",
-    "test:feeds:live": "cross-env PAPER_FEED_LIVE=1 vitest run tests/feed-live.test.ts",
-    "start": "tsx src/index.ts",
-    "preview-email": "tsx src/index.ts preview-email",
-    "notify-maintenance": "tsx src/index.ts notify-maintenance",
-    "setup-profile": "tsx src/index.ts setup-profile",
-    "test:config": "tsx src/index.ts test-config"
+    "build": "bun --bun tsc --noEmit",
+    "test": "bun test",
+    "test:email": "bun test ./tests/email.test.ts",
+    "test:feeds:live": "PAPER_FEED_LIVE=1 bun test ./tests/feed-live.test.ts",
+    "start": "bun src/index.ts",
+    "preview-email": "bun src/index.ts preview-email",
+    "notify-maintenance": "bun src/index.ts notify-maintenance",
+    "setup-profile": "bun src/index.ts setup-profile",
+    "test:config": "bun src/index.ts test-config"
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "@types/js-yaml": "^4.0.9",
-    "dotenv": "^17.4.2",
     "js-yaml": "^4.1.1",
     "nodemailer": "^9.0.1",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
-    "@types/node": "^22.10.2",
+    "@types/bun": "^1.3.14",
+    "@types/js-yaml": "^4.0.9",
     "@types/nodemailer": "^6.4.17",
-    "cross-env": "^10.1.0",
-    "tsx": "^4.22.4",
-    "typescript": "^5.7.2",
-    "vitest": "^4.1.5"
+    "typescript": "^5.7.2"
   },
   "overrides": {
     "adm-zip": "0.6.0"
   },
+  "trustedDependencies": [
+    "onnxruntime-node",
+    "protobufjs",
+    "sharp"
+  ],
   "engines": {
-    "node": ">=20"
+    "bun": ">=1.3.14"
   }
 }

@@ -10,6 +10,7 @@
 *.cjs     text eol=lf
 *.json    text eol=lf
 *.jsonc   text eol=lf
+*.toml    text eol=lf
 *.md      text eol=lf
 *.yml     text eol=lf
 *.yaml    text eol=lf
@@ -26,8 +27,8 @@
 *.bat     text eol=crlf
 *.cmd     text eol=crlf
 
-# npm lockfiles are generated text; keep diffs readable and line endings stable.
-package-lock.json text eol=lf
+# Bun lockfiles are generated text; keep diffs readable and line endings stable.
+bun.lock text eol=lf
 
 # Binary assets must not be line-ending normalized or diffed as text.
 *.png     binary -eol

@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import journals from "../data/journals.config.js";
 import { fetchFeedSource } from "../src/rss.js";
 import type { Journal } from "../src/types.js";

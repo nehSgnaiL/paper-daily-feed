@@ -1,6 +1,5 @@
 import { existsSync, mkdirSync, readFileSync, unlinkSync, writeFileSync } from "node:fs";
-import { parse as parseDotenv } from "dotenv";
-import { afterEach, describe, expect, it } from "vitest";
+import { afterEach, describe, expect, it } from "bun:test";
 import { loadAppConfig } from "../src/app-config.js";
 
 const appConfigPath = "config/app.json";
@@ -154,11 +153,11 @@ describe("loadAppConfig", () => {
   });
 
   it("keeps .env.example focused on environment variables", () => {
-    const parsedEnv = parseDotenv(readFileSync(".env.example"));
+    const exampleEnv = readFileSync(".env.example", "utf8");
 
-    expect(parsedEnv.APP_CONFIG).toBeUndefined();
-    expect(parsedEnv.OPENAI_BASE_URL).toBe("https://api.openai.com/v1");
-    expect(parsedEnv.EMBEDDING_BASE_URL).toBe("https://api.openai.com/v1");
+    expect(exampleEnv).not.toMatch(/^APP_CONFIG=/m);
+    expect(exampleEnv).toContain("OPENAI_BASE_URL=https://api.openai.com/v1");
+    expect(exampleEnv).toContain("EMBEDDING_BASE_URL=https://api.openai.com/v1");
   });
 
   it("keeps config/app.example.jsonc parseable as app config", () => {

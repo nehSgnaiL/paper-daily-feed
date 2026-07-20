@@ -1,6 +1,6 @@
 import { readFileSync } from "node:fs";
 
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 
 describe("maintenance workflow guidance", () => {
   it("explains how to configure workflow-file sync when workflow updates are skipped", () => {
@@ -29,7 +29,7 @@ describe("maintenance workflow guidance", () => {
     expect(workflow).toContain('set_manual_action "workflow-permission"');
     expect(workflow).toContain('set_manual_action "rebase-conflict"');
     expect(workflow).toContain('set_manual_action "push-failed"');
-    expect(workflow).toContain("npm start -- notify-maintenance");
+    expect(workflow).toContain("bun src/index.ts notify-maintenance");
     expect(workflow).toContain("steps.sync.outputs.manual_reason != ''");
     expect(workflow).toContain("MAINTENANCE_REASON:");
     expect(workflow).toContain("RECEIVER: ${{ secrets.RECEIVER }}");

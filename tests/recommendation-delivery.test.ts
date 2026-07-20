@@ -1,10 +1,11 @@
-import { afterEach, describe, expect, it, vi } from "vitest";
+import { afterEach, describe, expect, it, mock } from "bun:test";
 import type { AppConfig } from "../src/app-config.js";
 import { deliverRecommendations } from "../src/recommendation-delivery.js";
 import type { RecommendedPaper } from "../src/types.js";
+import { stubFetch } from "./test-support.js";
 
 afterEach(() => {
-  vi.restoreAllMocks();
+  mock.restore();
 });
 
 const recommendation: RecommendedPaper = {
@@ -39,7 +40,7 @@ const config: Pick<AppConfig, "summary" | "delivery" | "runtime"> = {
 
 describe("Recommendation Delivery", () => {
   it("falls back to the original abstract when one AI summary fails", async () => {
-    vi.stubGlobal("fetch", vi.fn(async () => new Response("unavailable", { status: 503 })));
+    stubFetch(mock(async () => new Response("unavailable", { status: 503 })));
 
     const result = await deliverRecommendations([recommendation], "preview-email", config, {
       filterUndeliveredPapers: (papers) => papers,

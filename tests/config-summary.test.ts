@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it } from "bun:test";
 import { loadAppConfig } from "../src/app-config.js";
 import { configSummaryLines } from "../src/config-summary.js";
 

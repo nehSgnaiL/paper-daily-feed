@@ -15,6 +15,12 @@ export type RecommendationDeliveryResult = {
   deliveryDetails: string;
 };
 
+export type RecommendationDeliveryDependencies = {
+  sendEmail: typeof sendEmail;
+};
+
+const defaultDependencies: RecommendationDeliveryDependencies = { sendEmail };
+
 function describeDelivery(result: unknown): string {
   if (!result || typeof result !== "object") return "";
   const delivery = result as { messageId?: unknown; accepted?: unknown };
@@ -72,7 +78,8 @@ export async function deliverRecommendations(
   config: Pick<AppConfig, "summary" | "delivery" | "runtime">,
   deliveryHistory: DeliveryHistorySession,
   env: Env = process.env,
-  now = new Date()
+  now = new Date(),
+  dependencies: RecommendationDeliveryDependencies = defaultDependencies
 ): Promise<RecommendationDeliveryResult> {
   if (recommendations.length === 0 && !config.runtime.sendEmpty && mode === "run") {
     console.log("No recommended papers above threshold. Skipping email.");
@@ -90,7 +97,7 @@ export async function deliverRecommendations(
   }
 
   console.log(`Sending ${prepared.length} recommendations via SMTP...`);
-  const delivery = await sendEmail(config.delivery, html, emailSubject(now));
+  const delivery = await dependencies.sendEmail(config.delivery, html, emailSubject(now));
   if (prepared.length > 0) {
     deliveryHistory.confirmSuccessfulDelivery(prepared, now);
   }

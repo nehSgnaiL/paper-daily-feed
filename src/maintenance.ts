@@ -213,7 +213,10 @@ function deliveryFromEnv(env: Env): DeliveryConfig {
   };
 }
 
-export async function sendMaintenanceNotification(env: Env = process.env): Promise<unknown> {
+export async function sendMaintenanceNotification(
+  env: Env = process.env,
+  deliver: typeof sendEmail = sendEmail
+): Promise<unknown> {
   const reason = requireReason(env.MAINTENANCE_REASON);
   const notice: MaintenanceNotice = {
     reason,
@@ -225,5 +228,5 @@ export async function sendMaintenanceNotification(env: Env = process.env): Promi
     ? "[Test] Paper Daily Feed maintenance notification / 维护通知测试"
     : "Action required: update Paper Daily Feed / 需要手动更新";
 
-  return sendEmail(deliveryFromEnv(env), renderMaintenanceEmail(notice), subject);
+  return deliver(deliveryFromEnv(env), renderMaintenanceEmail(notice), subject);
 }

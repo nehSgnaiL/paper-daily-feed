@@ -1,15 +1,8 @@
-import { beforeEach, describe, expect, it, vi } from "vitest";
+import { beforeEach, describe, expect, it, mock } from "bun:test";
 
 import { renderMaintenanceEmail, sendMaintenanceNotification } from "../src/maintenance.js";
-import { sendEmail } from "../src/email.js";
 
-vi.mock("../src/email.js", async (importOriginal) => {
-  const actual = await importOriginal<typeof import("../src/email.js")>();
-  return {
-    ...actual,
-    sendEmail: vi.fn()
-  };
-});
+const sendEmail = mock(async () => ({ messageId: "maintenance-message" }));
 
 describe("renderMaintenanceEmail", () => {
   it("renders workflow-token instructions and repository links in the recommendation email style", () => {
@@ -50,21 +43,24 @@ describe("renderMaintenanceEmail", () => {
 
 describe("sendMaintenanceNotification", () => {
   beforeEach(() => {
-    vi.clearAllMocks();
-    vi.mocked(sendEmail).mockResolvedValue({ messageId: "maintenance-message" });
+    mock.clearAllMocks();
+    sendEmail.mockResolvedValue({ messageId: "maintenance-message" });
   });
 
   it("uses workflow SMTP secrets without requiring APP_CONFIG", async () => {
-    await sendMaintenanceNotification({
-      MAINTENANCE_REASON: "test",
-      MAINTENANCE_REPOSITORY: "nehSgnaiL/paper-daily-feed",
-      MAINTENANCE_RUN_URL: "https://github.com/nehSgnaiL/paper-daily-feed/actions/runs/42",
-      SENDER: "sender@example.test",
-      SENDER_PASSWORD: "app-password",
-      RECEIVER: "receiver@example.test",
-      SMTP_SERVER: "smtp.example.test",
-      SMTP_PORT: "465"
-    });
+    await sendMaintenanceNotification(
+      {
+        MAINTENANCE_REASON: "test",
+        MAINTENANCE_REPOSITORY: "nehSgnaiL/paper-daily-feed",
+        MAINTENANCE_RUN_URL: "https://github.com/nehSgnaiL/paper-daily-feed/actions/runs/42",
+        SENDER: "sender@example.test",
+        SENDER_PASSWORD: "app-password",
+        RECEIVER: "receiver@example.test",
+        SMTP_SERVER: "smtp.example.test",
+        SMTP_PORT: "465"
+      },
+      sendEmail
+    );
 
     expect(sendEmail).toHaveBeenCalledWith(
       expect.objectContaining({

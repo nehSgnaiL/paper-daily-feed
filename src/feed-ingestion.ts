@@ -1,11 +1,16 @@
 import type { AppConfig } from "./app-config.js";
-import { fetchFeedSources } from "./rss.js";
+import { fetchFeedSources, type FetchFeedSourcesOptions } from "./rss.js";
 import type { FeedPaper, FeedSource, Journal } from "./types.js";
 
 export type FeedIngestionResult = {
   sources: FeedSource[];
   allPapers: FeedPaper[];
   recentPapers: FeedPaper[];
+};
+
+export type FeedIngestionOptions = {
+  fetchSources?: typeof fetchFeedSources;
+  fetchOptions?: FetchFeedSourcesOptions;
 };
 
 function selectedCatalogFeeds(catalog: Journal[], selections: string[] | null): Journal[] {
@@ -55,11 +60,12 @@ export async function ingestFeedPapers(
   catalog: Journal[],
   config: AppConfig["feeds"],
   maxAgeDays: number,
-  now = new Date()
+  now = new Date(),
+  options: FeedIngestionOptions = {}
 ): Promise<FeedIngestionResult> {
   const sources = configuredFeedSources(catalog, config);
   console.log(`Fetching ${sources.length} RSS feeds...`);
-  const allPapers = await fetchFeedSources(sources);
+  const allPapers = await (options.fetchSources ?? fetchFeedSources)(sources, options.fetchOptions);
   const recentPapers = recentFeedPapers(allPapers, maxAgeDays, now);
   console.log(`Fetched ${allPapers.length} RSS papers; ${recentPapers.length} are recent.`);
   return { sources, allPapers, recentPapers };

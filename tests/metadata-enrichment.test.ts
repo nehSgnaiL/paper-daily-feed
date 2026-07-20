@@ -1,4 +1,4 @@
-import { describe, expect, it, vi } from "vitest";
+import { describe, expect, it, mock } from "bun:test";
 import { enrichFeedPaperMetadata } from "../src/paper-metadata.js";
 import type { FeedPaper } from "../src/types.js";
 
@@ -15,7 +15,7 @@ function paper(overrides: Partial<FeedPaper> = {}): FeedPaper {
 
 describe("metadata enrichment", () => {
   it("uses Crossref metadata to supplement and correct RSS paper fields", async () => {
-    const fetchCrossref = vi.fn(async () => ({
+    const fetchCrossref = mock(async () => ({
       doi: "10.1080/24694452.2025.2592754",
       title: "Crossref title",
       abstract: "Crossref abstract with enough detail to replace the RSS description.",
@@ -46,7 +46,7 @@ describe("metadata enrichment", () => {
   });
 
   it("leaves RSS metadata unchanged when no DOI is available", async () => {
-    const fetchCrossref = vi.fn();
+    const fetchCrossref = mock();
 
     const enriched = await enrichFeedPaperMetadata(
       [paper({ url: "https://example.test/no-doi" })],
@@ -59,7 +59,7 @@ describe("metadata enrichment", () => {
   });
 
   it("does not replace RSS abstracts with Crossref placeholder text", async () => {
-    const fetchCrossref = vi.fn(async () => ({
+    const fetchCrossref = mock(async () => ({
       doi: "10.1080/24694452.2025.2592754",
       abstract: "."
     }));

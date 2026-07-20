@@ -185,7 +185,8 @@ function formatSender(value: string): string {
 export async function sendEmail(
   delivery: DeliveryConfig,
   html: string,
-  subject: string
+  subject: string,
+  createTransport: typeof nodemailer.createTransport = nodemailer.createTransport
 ): Promise<unknown> {
   const sender = requiredValue(delivery.from, "from");
   const receiver = requiredValue(delivery.to, "to");
@@ -193,7 +194,7 @@ export async function sendEmail(
   const smtpPort = requiredPort(delivery.smtpPort, "smtpPort");
   const senderPassword = requiredValue(delivery.smtpPassword, "smtpPassword");
 
-  const transporter = nodemailer.createTransport({
+  const transporter = createTransport({
     host: smtpServer,
     port: smtpPort,
     secure: smtpPort === 465,

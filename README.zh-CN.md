@@ -190,28 +190,29 @@ GitHub 默认暂停 fork 仓库中的工作流。启用它们：
 <h2>本地运行</h2>
 
 本地配置是可选的。只有当你想在本机预览或自定义推送时才需要。
+本地运行需要安装 [Bun](https://bun.sh/) 1.3.14 或更高版本。
 
 <details close>
   <summary>本地配置说明</summary>
 
 ```bash
 # 安装依赖
-npm install
+bun install
 
 # 复制示例文件，然后按你的账号和兴趣修改
 cp .env.example .env.local
 cp config/app.example.jsonc config/app.jsonc
 
 # 可选：打印一个文本兴趣画像配置片段，方便粘贴到 config/app.jsonc
-npm run setup-profile
+bun run setup-profile
 
 # 测试
-npm run test:config
-npm run preview-email
-npm run test:feeds:live
+bun run test:config
+bun run preview-email
+bun run test:feeds:live
 
 # 运行
-npm start -- run
+bun run start -- run
 ```
 
 本地开发时，把非敏感应用配置放在 `config/app.jsonc`，把 secrets 放在 `.env.local`。

@@ -1,6 +1,4 @@
 import Parser from "rss-parser";
-import { execFile } from "node:child_process";
-import { promisify } from "node:util";
 import { createProgress } from "./progress.js";
 import { fetchCrossrefJournalWorks, type CrossrefMetadata } from "./crossref.js";
 import type { FeedPaper, FeedSource } from "./types.js";
@@ -82,7 +80,7 @@ function rssHeadersForProfile(profile: RssHeaders): RssHeaders {
 
 type FeedPublisher = "Springer" | "AAAS" | "PNAS" | "Taylor & Francis" | "Elsevier" | "Royal Society" | "IEEE";
 
-type FetchFeedSourcesOptions = {
+export type FetchFeedSourcesOptions = {
   delayMs?: number;
   delayRangeMs?: {
     minMs: number;
@@ -103,8 +101,6 @@ const DEFAULT_RSS_REQUEST_DELAY_RANGE_MS = {
 const DEFAULT_RSS_RETRY_COUNT = 2;
 const DEFAULT_RSS_RETRY_DELAY_MS = 5_000;
 const DEFAULT_RSS_DEFERRED_RETRY_DELAY_MS = 10_000;
-const execFileAsync = promisify(execFile);
-
 function wait(ms: number): Promise<void> {
   return ms > 0 ? new Promise((resolve) => setTimeout(resolve, ms)) : Promise.resolve();
 }
@@ -675,11 +671,23 @@ async function fetchFeedSourceWithCurl(source: FeedSource): Promise<FeedPaper[]>
   }
   args.push("--", source.rss);
 
-  const { stdout } = await execFileAsync("curl", args, {
-    encoding: "utf8",
-    maxBuffer: 10 * 1024 * 1024,
-    timeout: 45_000
+  const subprocess = Bun.spawn(["curl", ...args], {
+    stdout: "pipe",
+    stderr: "pipe"
   });
+  const timeout = setTimeout(() => subprocess.kill(), 45_000);
+  const [stdout, stderr, exitCode] = await Promise.all([
+    new Response(subprocess.stdout).text(),
+    new Response(subprocess.stderr).text(),
+    subprocess.exited
+  ]).finally(() => clearTimeout(timeout));
+
+  if (exitCode !== 0) {
+    throw new Error(`curl exited with code ${exitCode}: ${stderr.trim() || "no error output"}`);
+  }
+  if (Buffer.byteLength(stdout) > 10 * 1024 * 1024) {
+    throw new Error("curl response exceeded the 10 MiB feed limit");
+  }
   return parseFeedBody(source, stdout);
 }
 
