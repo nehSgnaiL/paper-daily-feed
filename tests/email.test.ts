@@ -188,6 +188,65 @@ describe("sendEmail", () => {
     });
   });
 
+  it("retries a refused SMTP connection before giving up", async () => {
+    const connectionError = Object.assign(new Error("connect ECONNREFUSED"), {
+      code: "ESOCKET",
+      command: "CONN"
+    });
+    const sendMail = mock()
+      .mockRejectedValueOnce(connectionError)
+      .mockResolvedValueOnce({
+        messageId: "message-id-after-retry",
+        accepted: ["receiver@example.test"]
+      });
+    const createTransport = mock(() => ({ sendMail } as never));
+    const sleep = mock(() => Promise.resolve());
+
+    const result = await sendEmail(delivery, "<p>Hello</p>", "Subject", createTransport, sleep);
+
+    expect(createTransport).toHaveBeenCalledTimes(2);
+    expect(sendMail).toHaveBeenCalledTimes(2);
+    expect(sleep).toHaveBeenCalledWith(2_000);
+    expect(result).toMatchObject({ messageId: "message-id-after-retry" });
+  });
+
+  it("limits SMTP connection retries and preserves the final error", async () => {
+    const connectionError = Object.assign(new Error("connect ECONNREFUSED"), {
+      code: "ESOCKET",
+      command: "CONN"
+    });
+    const sendMail = mock().mockRejectedValue(connectionError);
+    const createTransport = mock(() => ({ sendMail } as never));
+    const sleep = mock(() => Promise.resolve());
+
+    await expect(
+      sendEmail(delivery, "<p>Hello</p>", "Subject", createTransport, sleep)
+    ).rejects.toBe(connectionError);
+
+    expect(createTransport).toHaveBeenCalledTimes(3);
+    expect(sendMail).toHaveBeenCalledTimes(3);
+    expect(sleep).toHaveBeenNthCalledWith(1, 2_000);
+    expect(sleep).toHaveBeenNthCalledWith(2, 5_000);
+  });
+
+  it("does not retry failures after the SMTP connection is established", async () => {
+    const authenticationError = Object.assign(new Error("Invalid login"), {
+      code: "EAUTH",
+      command: "AUTH"
+    });
+    const sendMail = mock().mockRejectedValue(authenticationError);
+    const createTransport = mock(() => ({ sendMail } as never));
+    const sleep = mock(() => Promise.resolve());
+
+    await expect(
+      sendEmail(delivery, "<p>Hello</p>", "Subject", createTransport, sleep)
+    ).rejects.toBe(authenticationError);
+
+    expect(createTransport).toHaveBeenCalledTimes(1);
+    expect(sendMail).toHaveBeenCalledTimes(1);
+    expect(sleep).not.toHaveBeenCalled();
+  });
+
   it("throws a clear error when a required delivery value is missing", async () => {
     await expect(sendEmail({ ...delivery, from: "" }, "<p>Hello</p>", "Subject")).rejects.toThrow(
       "Missing required delivery value: from."

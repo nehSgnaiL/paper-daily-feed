@@ -208,11 +208,22 @@ function formatSender(value: string): string {
   return `"${EMAIL_SENDER_NAME}" <${emailAddress(value)}>`;
 }
 
+const SMTP_RETRY_DELAYS_MS = [2_000, 5_000] as const;
+
+function sleep(milliseconds: number): Promise<void> {
+  return new Promise((resolve) => setTimeout(resolve, milliseconds));
+}
+
+function isSmtpConnectionError(error: unknown): boolean {
+  return typeof error === "object" && error !== null && "command" in error && error.command === "CONN";
+}
+
 export async function sendEmail(
   delivery: DeliveryConfig,
   html: string,
   subject: string,
-  createTransport: typeof nodemailer.createTransport = nodemailer.createTransport
+  createTransport: typeof nodemailer.createTransport = nodemailer.createTransport,
+  wait: (milliseconds: number) => Promise<void> = sleep
 ): Promise<unknown> {
   const sender = requiredValue(delivery.from, "from");
   const receiver = requiredValue(delivery.to, "to");
@@ -220,23 +231,37 @@ export async function sendEmail(
   const smtpPort = requiredPort(delivery.smtpPort, "smtpPort");
   const senderPassword = requiredValue(delivery.smtpPassword, "smtpPassword");
 
-  const transporter = createTransport({
-    host: smtpServer,
-    port: smtpPort,
-    secure: smtpPort === 465,
-    connectionTimeout: 15000,
-    greetingTimeout: 15000,
-    socketTimeout: 30000,
-    auth: {
-      user: emailAddress(sender),
-      pass: senderPassword
-    }
-  });
+  for (let attempt = 0; ; attempt += 1) {
+    const transporter = createTransport({
+      host: smtpServer,
+      port: smtpPort,
+      secure: smtpPort === 465,
+      connectionTimeout: 15000,
+      greetingTimeout: 15000,
+      socketTimeout: 30000,
+      auth: {
+        user: emailAddress(sender),
+        pass: senderPassword
+      }
+    });
 
-  return transporter.sendMail({
-    from: formatSender(sender),
-    to: receiver,
-    subject,
-    html
-  });
+    try {
+      return await transporter.sendMail({
+        from: formatSender(sender),
+        to: receiver,
+        subject,
+        html
+      });
+    } catch (error) {
+      const retryDelay = SMTP_RETRY_DELAYS_MS[attempt];
+      if (!isSmtpConnectionError(error) || retryDelay === undefined) {
+        throw error;
+      }
+
+      console.warn(
+        `SMTP connection attempt ${attempt + 1}/${SMTP_RETRY_DELAYS_MS.length + 1} failed; retrying in ${retryDelay}ms.`
+      );
+      await wait(retryDelay);
+    }
+  }
 }
