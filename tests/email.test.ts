@@ -114,7 +114,8 @@ describe("renderEmail", () => {
     expect(html).toContain("letter-spacing: 0.02em; text-align: left;");
     expect(html).toContain('class="footer-credit"');
     expect(html).toContain('class="footer-action"');
-    expect(html).toContain("@media only screen and (max-width: 480px)");
+    expect(html.indexOf("Built with")).toBeLessThan(html.indexOf("Unsubscribe"));
+    expect(html).not.toContain("@media only screen and (max-width: 480px)");
     expect(html).not.toContain('colspan="3"');
     expect(html).not.toContain('width: 2px; background: #007aff;');
     expect(html).not.toContain("padding-top: 13px; border-top: 1px solid #d2d2d7;");

@@ -226,15 +226,6 @@ export function renderEmail(
         .editorial-copy { padding-left: 10px !important; padding-right: 10px !important; }
         .paper-pad { padding-left: 18px !important; padding-right: 18px !important; }
       }
-      @media only screen and (max-width: 480px) {
-        .footer-credit,
-        .footer-action {
-          display: block !important;
-          width: 100% !important;
-          text-align: left !important;
-        }
-        .footer-action { padding: 6px 0 0 0 !important; }
-      }
       @media (prefers-color-scheme: dark) {
         .email-body, .page { background: #000000 !important; }
         .paper-card { background: #1c1c1e !important; }
@@ -279,7 +270,9 @@ export function renderEmail(
                 <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin-top: 15px;">
                   <tr>
                     <td align="left" valign="middle" class="footer-credit" style="padding: 0; color: #86868b; font-size: 11px; line-height: 1.5; text-align: left;">Built with <a href="${packageMetadata.homepage}" class="accent" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a> by <a href="https://nehsgnail.github.io/" class="accent" style="color: #007aff; font-weight: 700; text-decoration: none;">nehSgnaiL</a>.</td>
-                    <td align="right" valign="middle" class="footer-action" style="padding: 0 0 0 16px; color: #86868b; font-size: 11px; line-height: 1.5; text-align: right; white-space: nowrap;"><a href="${packageMetadata.homepage}#customization" style="color: inherit; text-decoration: underline;">Unsubscribe</a></td>
+                  </tr>
+                  <tr>
+                    <td align="left" valign="middle" class="footer-action" style="padding: 6px 0 0 0; color: #86868b; font-size: 11px; line-height: 1.5; text-align: left;"><a href="${packageMetadata.homepage}#customization" style="color: inherit; text-decoration: underline;">Unsubscribe</a></td>
                   </tr>
                 </table>
               </td>
