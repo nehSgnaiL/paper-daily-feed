@@ -18,7 +18,26 @@ const recommendation: RecommendedPaper = {
   matchContext: null
 };
 
-const config: Pick<AppConfig, "summary" | "dailyRomance" | "delivery" | "runtime"> = {
+const config: Pick<AppConfig, "interests" | "summary" | "dailyRomance" | "delivery" | "runtime"> = {
+  interests: {
+    profile: {
+      enabled: true,
+      summary: "Urban mobility and climate resilience.",
+      topics: ["transport equity"],
+      methods: ["spatial modeling"],
+      favoriteJournals: [],
+      avoidTopics: [],
+      referencePapers: []
+    },
+    zotero: {
+      enabled: false,
+      userId: "",
+      apiKey: "",
+      libraryType: "user",
+      includeCollections: [],
+      excludeCollections: []
+    }
+  },
   summary: {
     enabled: true,
     baseUrl: "https://api.example.test/v1",
@@ -80,5 +99,84 @@ describe("Recommendation Delivery", () => {
     expect(result.html).toContain("The quieter you become, the more you are able to hear.");
     expect(result.html).toContain("Rumi");
     expect(result.html).toContain(">ZenQuotes</a>");
+  });
+
+  it("uses the dated main-branch subject without an LLM", async () => {
+    const fetchMock = mock(async () => new Response("unexpected"));
+    stubFetch(fetchMock);
+    const sendEmail = mock(async () => ({ messageId: "fallback-subject" }));
+
+    await deliverRecommendations(
+      [recommendation],
+      "run",
+      {
+        ...config,
+        summary: { ...config.summary, enabled: false },
+        dailyRomance: { enabled: false }
+      },
+      {
+        filterUndeliveredPapers: (papers) => papers,
+        confirmSuccessfulDelivery: () => undefined
+      },
+      {},
+      new Date("2026-08-25T00:00:00Z"),
+      { sendEmail }
+    );
+
+    expect(fetchMock).not.toHaveBeenCalled();
+    expect(sendEmail).toHaveBeenCalledWith(
+      config.delivery,
+      expect.stringContaining(">Abstract:</strong>"),
+      "Paper feed for 25th August 2026"
+    );
+  });
+
+  it("keeps the dated main-branch subject when the LLM succeeds", async () => {
+    stubFetch(
+      mock(async () =>
+        new Response(
+          JSON.stringify({
+            choices: [
+              {
+                message: {
+                  content: JSON.stringify({
+                    headline: "韧性街道值得优先关注",
+                    overview: "街道尺度的空间结构揭示了交通系统的韧性差异。",
+                    preheader: "从街道尺度理解交通与气候韧性。",
+                    papers: [
+                      {
+                        takeaway: "街道尺度的空间结构揭示了交通韧性差异。",
+                        tldr: "论文从街道尺度分析交通系统的气候韧性。"
+                      }
+                    ]
+                  })
+                }
+              }
+            ]
+          }),
+          { status: 200, headers: { "Content-Type": "application/json" } }
+        )
+      )
+    );
+    const sendEmail = mock(async () => ({ messageId: "editorial-subject" }));
+
+    await deliverRecommendations(
+      [recommendation],
+      "run",
+      { ...config, dailyRomance: { enabled: false } },
+      {
+        filterUndeliveredPapers: (papers) => papers,
+        confirmSuccessfulDelivery: () => undefined
+      },
+      {},
+      new Date("2026-08-25T00:00:00Z"),
+      { sendEmail }
+    );
+
+    expect(sendEmail).toHaveBeenCalledWith(
+      config.delivery,
+      expect.stringContaining("韧性街道值得优先关注"),
+      "Paper feed for 25th August 2026"
+    );
   });
 });

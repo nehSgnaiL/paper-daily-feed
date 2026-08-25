@@ -5,7 +5,7 @@ import type { DeliveryConfig } from "../src/app-config.js";
 import type { RecommendedPaper } from "../src/types.js";
 
 describe("renderEmail", () => {
-  it("renders recommended papers with journal, score, link, authors, affiliation, and abstract excerpt fallback", () => {
+  it("renders a compact paper card with the recommendation score", () => {
     const papers: RecommendedPaper[] = [
       {
         journal: "Nature Cities",
@@ -30,23 +30,38 @@ describe("renderEmail", () => {
     expect(html).toContain("Transit accessibility improves climate resilience");
     expect(html).toContain("Nature Cities");
     expect(html).toContain("2026-04-28");
+    expect(html).toContain("Nature Cities · 2026-04-28");
+    expect(html).not.toContain("01 · Nature Cities");
     expect(html).toContain("Ada Lovelace, Grace Hopper");
     expect(html).toContain("Example University");
     expect(html).toContain("45.6%");
+    expect(html).toContain("Recommendation score: 45.6%");
     expect(html).not.toContain("Matched your interests");
     expect(html).not.toContain("Urban mobility and climate adaptation");
-    expect(html).toContain("Abstract excerpt");
+    expect(html).toContain('class="paper-card border-color"');
+    expect(html).not.toContain("lead-paper");
+    expect(html).toContain(">Abstract:</strong>");
     expect(html).toContain("Public transit accessibility and climate resilience in neighborhoods.");
     expect(html).toContain("https://example.test/transit");
+    expect(html).not.toContain("&nearr;</span></a>");
+    expect(html).not.toContain("Read paper");
     expect(html).toContain(packageMetadata.homepage);
     expect(html).toContain(">Unsubscribe</a>");
     expect(html).toContain(`${packageMetadata.homepage}#customization`);
     expect(html).toContain('lang="en"');
-    expect(html).toContain("Today's papers, with a little wonder.");
     expect(html).toContain('name="viewport" content="width=device-width, initial-scale=1.0"');
-    expect(html).toContain('<table role="presentation" width="600"');
+    expect(html).toContain('name="color-scheme" content="light dark"');
+    expect(html).toContain("max-width: 600px; table-layout: fixed;");
     expect(html).toContain('align="center"');
-    expect(html).toContain("border: 1px solid #d9ebff");
+    expect(html).toContain("background: #e8f4ff");
+    expect(html).toContain("background: #ffffff");
+    expect(html).toContain("color: #007aff");
+    expect(html).toContain("background: #000000 !important");
+    expect(html).toContain("background: #1c1c1e !important");
+    expect(html).toContain("color: #0a84ff !important");
+    expect(html).toContain('src="cid:paper-daily-feed-icon"');
+    expect(html).not.toContain("paper-daily-feed-icon-light");
+    expect(html).not.toContain("raw.githubusercontent.com");
     expect(html).not.toContain("<article");
     expect(html).not.toContain("<main");
   });
@@ -55,25 +70,57 @@ describe("renderEmail", () => {
     expect(renderEmail([])).toContain("No recommended papers today");
   });
 
-  it("replaces repetitive header copy with a sourced daily quotation", () => {
-    const html = renderEmail([], {
-      text: "空山新雨后，天气晚来秋。",
-      author: "王维",
-      sourceTitle: "山居秋暝",
-      sourceUrl: "https://hitokoto.cn?uuid=example",
-      sourceName: "一言"
-    });
+  it("renders the sourced daily quotation as an epilogue after the papers", () => {
+    const paper: RecommendedPaper = {
+      journal: "Nature",
+      title: "A paper before the daily quotation",
+      abstract: "Example abstract.",
+      url: "https://example.test/after-quote",
+      publishedAt: null,
+      score: 0.9,
+      matchContext: null
+    };
+    const html = renderEmail(
+      [paper],
+      {
+        text: "空山新雨后，天气晚来秋。",
+        author: "王维",
+        sourceTitle: "山居秋暝",
+        sourceUrl: "https://hitokoto.cn?uuid=example",
+        sourceName: "一言"
+      },
+      null,
+      new Date("2026-08-25T00:00:00Z")
+    );
 
     expect(html).toContain("空山新雨后，天气晚来秋。");
     expect(html).toContain("王维");
     expect(html).toContain(">一言</a>");
     expect(html).toContain("山居秋暝");
     expect(html).toContain("https://hitokoto.cn?uuid=example");
-    expect(html).toContain(
-      "margin: 26px auto 0 auto; max-width: 480px; color: #6e6e73; font-family: Georgia, 'Times New Roman', serif; font-size: 14px; line-height: 1.5;"
+    expect(html.indexOf("空山新雨后")).toBeGreaterThan(
+      html.indexOf("A paper before the daily quotation")
     );
-    expect(html).toContain("padding: 10px 2px 26px 2px; text-align: center;");
-    expect(html).toContain("font-size: 11px; line-height: 1.4; text-align: right;");
+    expect(html.indexOf("空山新雨后")).toBeLessThan(html.indexOf("Built with"));
+    expect(html).toContain("AUG 25, 2026");
+    expect(html).toContain(
+      'align="right" style="color: #007aff; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;" class="accent"'
+    );
+    expect(html.indexOf("AUG 25, 2026")).toBeLessThan(html.indexOf("空山新雨后"));
+    expect(html).toContain('class="romance-copy-cell"');
+    expect(html).toContain('align="left" class="romance-copy-cell"');
+    expect(html).toContain("padding: 0; text-align: left;");
+    expect(html).toContain("&rdquo;</p>");
+    expect(html).toContain("letter-spacing: 0.02em; text-align: left;");
+    expect(html).toContain('class="footer-credit"');
+    expect(html).toContain('class="footer-action"');
+    expect(html).toContain("@media only screen and (max-width: 480px)");
+    expect(html).not.toContain('colspan="3"');
+    expect(html).not.toContain('width: 2px; background: #007aff;');
+    expect(html).not.toContain("padding-top: 13px; border-top: 1px solid #d2d2d7;");
+    expect(html).toContain(
+      "font-family: Georgia, 'Times New Roman', serif; font-size: 14px; line-height: 1.65;"
+    );
     expect(html).not.toContain("Research Bulletin");
     expect(html).not.toContain(
       "A recommendation of papers based on your research interests."
@@ -90,7 +137,77 @@ describe("renderEmail", () => {
       sourceName: "ZenQuotes"
     });
 
-    expect(html).toContain("serif; font-size: 14px; line-height: 1.5;");
+    expect(html).toContain("serif; font-size: 14px; line-height: 1.65;");
+    expect(html).not.toContain("font-style: italic;");
+  });
+
+  it("renders the editorial hierarchy only when an LLM digest is available", () => {
+    const paper: RecommendedPaper = {
+      journal: "Nature Cities",
+      title: "Networks shape accessible cities",
+      abstract: "The study models accessibility over an urban transport network.",
+      url: "https://example.test/networks",
+      publishedAt: null,
+      score: 0.9,
+      matchContext: null
+    };
+    const digest = {
+      headline: "空间网络正在重塑可达性研究",
+      overview: "网络结构正从背景变量转变为可达性模型的核心输入。",
+      preheader: "首选论文直接建模城市交通网络。",
+      papers: [
+        {
+          takeaway: "交通网络约束成为城市出行预测的核心信息",
+          tldr: "论文联合建模连续空间与交通网络以预测城市出行。实验覆盖多个城市，以比较模型的迁移能力"
+        }
+      ]
+    };
+
+    const editorialHtml = renderEmail(
+      [paper],
+      {
+        text: "A quiet thought between the brief and the papers.",
+        author: "Example Author",
+        sourceTitle: "",
+        sourceUrl: "https://example.test/quote",
+        sourceName: "Example Quotes"
+      },
+      digest,
+      new Date("2026-08-25T00:00:00Z")
+    );
+    const fallbackHtml = renderEmail([paper], null, null, new Date("2026-08-25T00:00:00Z"));
+
+    expect(editorialHtml).not.toContain("Today&rsquo;s brief");
+    expect(editorialHtml).toContain("空间网络正在重塑可达性研究</h1>");
+    expect(editorialHtml).not.toContain("空间网络正在重塑可达性研究。</h1>");
+    expect(editorialHtml).not.toContain('class="brief-label text-tertiary"');
+    expect(editorialHtml).toContain('class="editorial-copy"');
+    expect(editorialHtml).toContain("padding: 0 20px; text-align: left;");
+    expect(editorialHtml).not.toContain("letter-spacing: -0.025em; text-align: center;");
+    expect(editorialHtml).not.toContain("Start here");
+    expect(editorialHtml).toContain(">TLDR:</strong>");
+    expect(editorialHtml).not.toContain("Why read this");
+    expect(editorialHtml).toContain("交通网络约束成为城市出行预测的核心信息。");
+    expect(editorialHtml).toContain(
+      "论文联合建模连续空间与交通网络以预测城市出行。实验覆盖多个城市，以比较模型的迁移能力。"
+    );
+    expect(editorialHtml).toContain(
+      'class="text-primary" style="color: #1d1d1f;">交通网络约束成为城市出行预测的核心信息。'
+    );
+    expect(editorialHtml).not.toContain("它对应城市出行研究");
+    expect(editorialHtml).not.toContain("Why it fits&nbsp;&mdash;");
+    expect(editorialHtml).toContain('class="text-tertiary" style="color: #6e6e73;"');
+    expect(editorialHtml).not.toContain("Takeaway");
+    expect(editorialHtml).not.toContain("Why this fits");
+    expect(editorialHtml).toContain("AUG 25, 2026");
+    expect(editorialHtml.indexOf("Networks shape accessible cities")).toBeLessThan(
+      editorialHtml.indexOf("A quiet thought between the brief and the papers.")
+    );
+    expect(fallbackHtml).not.toContain("Today&rsquo;s brief");
+    expect(fallbackHtml).not.toContain('class="brief-label text-tertiary"');
+    expect(fallbackHtml).not.toContain(">TLDR:</strong>");
+    expect(fallbackHtml).toContain(">Abstract:</strong>");
+    expect(fallbackHtml).toContain("AUG 25, 2026");
   });
 
   it("renders recommended papers from highest score to lowest score", () => {
@@ -179,7 +296,14 @@ describe("sendEmail", () => {
         from: "\"Daily Paper Feeds\" <sender@example.test>",
         to: "receiver@example.test",
         subject: "Subject",
-        html: "<p>Hello</p>"
+        html: "<p>Hello</p>",
+        attachments: [
+          expect.objectContaining({
+            filename: "paper-daily-feed-icon.png",
+            cid: "paper-daily-feed-icon",
+            contentDisposition: "inline"
+          })
+        ]
       })
     );
     expect(result).toMatchObject({

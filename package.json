@@ -10,6 +10,7 @@
     "build": "bun --bun tsc --noEmit",
     "test": "bun test",
     "test:email": "bun test ./tests/email.test.ts",
+    "preview:email-design": "bun scripts/render-email-preview.ts",
     "test:feeds:live": "PAPER_FEED_LIVE=1 bun test ./tests/feed-live.test.ts",
     "start": "bun src/index.ts",
     "preview-email": "bun src/index.ts preview-email",

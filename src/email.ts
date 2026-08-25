@@ -1,13 +1,16 @@
 import nodemailer from "nodemailer";
+import { fileURLToPath } from "node:url";
 import packageMetadata from "../package.json";
 import type { DeliveryConfig } from "./app-config.js";
 import type { DailyRomance } from "./daily-romance.js";
+import type { EditorialDigest, PaperBrief } from "./summary.js";
 import type { RecommendedPaper } from "./types.js";
 
-const ABSTRACT_EXCERPT_LIMIT = 280;
-const EMAIL_PREHEADER = "Today's papers, with a little wonder.";
+const ABSTRACT_EXCERPT_LIMIT = 320;
 const EMAIL_SENDER_NAME = "Daily Paper Feeds";
+const EMAIL_ICON_CID = "paper-daily-feed-icon";
 const EMAIL_WIDTH = 600;
+const FALLBACK_PREHEADER = "Research selected for you, ready when you are.";
 
 type RenderablePaper = Omit<RecommendedPaper, "matchContext"> & {
   matchContext?: RecommendedPaper["matchContext"];
@@ -23,131 +26,185 @@ function escapeHtml(value: string): string {
 }
 
 function formatDate(value: Date | null): string {
-  if (!value) {
-    return "";
-  }
-  return value.toISOString().slice(0, 10);
+  return value?.toISOString().slice(0, 10) ?? "";
+}
+
+function formatEditionDate(value: Date): string {
+  return value
+    .toLocaleDateString("en-US", {
+      day: "numeric",
+      month: "short",
+      year: "numeric",
+      timeZone: "UTC"
+    })
+    .toUpperCase();
 }
 
 function truncateText(value: string, maxLength: number): string {
   const normalized = value.replace(/\s+/g, " ").trim();
-  if (normalized.length <= maxLength) {
-    return normalized;
-  }
-
-  return `${normalized.slice(0, maxLength).trimEnd()}...`;
+  if (normalized.length <= maxLength) return normalized;
+  return `${normalized.slice(0, maxLength - 3).trimEnd()}...`;
 }
 
-function renderSummary(paper: RenderablePaper): string {
-  if (paper.tldr?.trim()) {
-    return `<p style="margin: 16px 0 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">TLDR:</strong> ${escapeHtml(
-      paper.tldr.trim()
-    )}</p>`;
-  }
-
-  if (paper.abstract.trim()) {
-    return `<p style="margin: 16px 0 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">Abstract excerpt:</strong> ${escapeHtml(
-      truncateText(paper.abstract, ABSTRACT_EXCERPT_LIMIT)
-    )}</p>`;
-  }
-
-  return `<p style="margin: 16px 0 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong style="color: #1d1d1f;">Abstract excerpt:</strong> No abstract provided.</p>`;
+function ensureSentenceEnding(value: string): string {
+  const normalized = value.trim();
+  if (!normalized || /[.!?。！？…]["'”’）)]?$/.test(normalized)) return normalized;
+  return `${normalized}${/[\u3400-\u9fff]/.test(normalized) ? "。" : "."}`;
 }
 
-function renderMetaLine(paper: RenderablePaper): string {
-  const date = formatDate(paper.publishedAt);
-  const values = [paper.journal, date].filter((value) => value.trim().length > 0);
-  return `<p style="margin: 0 0 8px 0; color: #007aff; font-size: 12px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;">${escapeHtml(
-    values.join(" · ")
-  )}</p>`;
+function fallbackPreheader(papers: RenderablePaper[]): string {
+  const firstPaper = papers[0];
+  if (!firstPaper) return FALLBACK_PREHEADER;
+  return truncateText(firstPaper.abstract || firstPaper.title, 150) || FALLBACK_PREHEADER;
 }
 
-function renderAuthors(paper: RenderablePaper): string {
-  if (!paper.authors || paper.authors.length === 0) {
-    return "";
-  }
-
-  return `<p style="margin: 0 0 8px 0; color: #424245; font-size: 14px; line-height: 1.45;">${escapeHtml(
-    paper.authors.join(", ")
-  )}</p>`;
-}
-
-function renderAffiliation(paper: RenderablePaper): string {
-  if (!paper.firstAffiliation?.trim()) {
-    return "";
-  }
-
-  return `<p style="margin: 0 0 14px 0; color: #6e6e73; font-size: 13px; line-height: 1.45;">${escapeHtml(
-    paper.firstAffiliation.trim()
-  )}</p>`;
-}
-
-function renderPaper(paper: RenderablePaper): string {
-  const score = `${(paper.score * 100).toFixed(1)}%`;
-  const summary = renderSummary(paper);
-  const authors = renderAuthors(paper);
-  const affiliation = renderAffiliation(paper);
-
-  return `
-        <tr>
-          <td style="padding: 0 0 18px 0;">
-            <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; border-collapse: separate; background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px;">
-              <tr>
-                <td style="padding: 24px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
-                  ${renderMetaLine(paper)}
-                  <h2 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 24px; line-height: 1.24; margin: 0 0 12px 0; color: #1d1d1f; letter-spacing: 0;">
-                    <a href="${escapeHtml(paper.url)}" style="color: #1d1d1f; text-decoration: none;">${escapeHtml(
-                      paper.title
-                    )}</a>
-                  </h2>
-                  ${authors}
-                  ${affiliation}
-                  <table role="presentation" cellpadding="0" cellspacing="0" border="0">
-                    <tr>
-                      <td bgcolor="#007aff" style="background: #007aff; border-radius: 999px; padding: 8px 13px; color: #ffffff; font-size: 13px; font-weight: 700; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">Recommendation score: ${score}</td>
-                    </tr>
-                  </table>
-                  ${summary}
-                </td>
-              </tr>
-            </table>
-          </td>
-        </tr>`;
-}
-
-function renderDailyRomance(romance: DailyRomance | null | undefined): string {
+function renderRomance(romance: DailyRomance | null | undefined): string {
   if (!romance) return "";
-  const attribution = [
+
+  const romanceByline = [
     romance.author,
     romance.sourceTitle === romance.author ? "" : romance.sourceTitle
   ]
     .filter(Boolean)
     .map(escapeHtml)
     .join(" · ");
-  return `<p style="margin: 26px auto 0 auto; max-width: 480px; color: #6e6e73; font-family: Georgia, 'Times New Roman', serif; font-size: 14px; line-height: 1.5;">&ldquo;${escapeHtml(
-    romance.text
-  )}&rdquo;</p>
-                <p style="margin: 5px auto 0 auto; max-width: 480px; color: #86868b; font-size: 11px; line-height: 1.4; text-align: right;">&mdash; ${attribution} · <a href="${escapeHtml(
-                  romance.sourceUrl
-                )}" style="color: inherit; text-decoration: underline;">${escapeHtml(
-                  romance.sourceName
-                )}</a></p>`;
+
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td align="left" class="romance-copy-cell" style="padding: 0; text-align: left;">
+                        <p class="text-tertiary" style="margin: 0; color: #6e6e73; font-family: Georgia, 'Times New Roman', serif; font-size: 14px; line-height: 1.65;">&ldquo;${escapeHtml(
+                          romance.text
+                        )}&rdquo;</p>
+                        <p class="text-tertiary" style="margin: 7px 0 0 0; color: #86868b; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Arial, sans-serif; font-size: 10.5px; line-height: 1.45; letter-spacing: 0.02em; text-align: left;">&mdash;&nbsp;${romanceByline ? `${romanceByline} · ` : ""}<a href="${escapeHtml(
+                          romance.sourceUrl
+                        )}" style="color: inherit; text-decoration: underline;">${escapeHtml(romance.sourceName)}</a></p>
+                      </td>
+                    </tr>
+                  </table>`;
+}
+
+function renderBrand(editionDate: Date): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0">
+                    <tr>
+                      <td valign="middle">
+                        <table role="presentation" cellpadding="0" cellspacing="0" border="0">
+                          <tr>
+                            <td width="44" valign="middle">
+                              <img src="cid:${EMAIL_ICON_CID}" width="40" height="40" alt="" style="display: block; width: 40px; height: 40px; border: 0; border-radius: 12px;">
+                            </td>
+                            <td valign="middle" style="padding-left: 10px; color: #007aff; font-size: 18px; font-weight: 700; letter-spacing: -0.01em; white-space: nowrap;" class="accent">Daily Paper Feeds</td>
+                          </tr>
+                        </table>
+                      </td>
+                      <td valign="middle" align="right" style="color: #007aff; font-size: 11px; font-weight: 600; letter-spacing: 0.06em;" class="accent">${formatEditionDate(
+                        editionDate
+                      )}</td>
+                    </tr>
+                  </table>`;
+}
+
+function renderEditorial(digest: EditorialDigest): string {
+  return `<table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="margin-top: 20px;">
+                    <tr>
+                      <td class="editorial-copy" style="padding: 0 20px; text-align: left;">
+                        <h1 class="text-primary" style="margin: 0; color: #1d1d1f; font-size: 30px; line-height: 1.14; font-weight: 700; letter-spacing: -0.025em;">${escapeHtml(
+                          digest.headline
+                        )}</h1>
+                        <p class="text-secondary" style="margin: 14px 0 0 0; color: #424245; font-size: 16px; line-height: 1.58;">${escapeHtml(
+                          digest.overview
+                        )}</p>
+                      </td>
+                    </tr>
+                  </table>`;
+}
+
+function renderMetaLine(paper: RenderablePaper): string {
+  const date = formatDate(paper.publishedAt);
+  const values = [paper.journal, date].filter(Boolean);
+  return `<p class="accent" style="margin: 0 0 9px 0; color: #007aff; font-size: 12px; font-weight: 700; line-height: 1.4; letter-spacing: 0.08em; text-transform: uppercase; overflow-wrap: anywhere; word-break: break-word;">${escapeHtml(
+    values.join(" · ")
+  )}</p>`;
+}
+
+function renderAuthors(paper: RenderablePaper): string {
+  if (!paper.authors?.length) return "";
+  return `<p class="text-secondary" style="margin: 0 0 8px 0; color: #424245; font-size: 14px; line-height: 1.45;">${escapeHtml(
+    paper.authors.join(", ")
+  )}</p>`;
+}
+
+function renderAffiliation(paper: RenderablePaper): string {
+  if (!paper.firstAffiliation?.trim()) return "";
+  return `<p class="text-tertiary" style="margin: 0; color: #6e6e73; font-size: 13px; line-height: 1.45;">${escapeHtml(
+    paper.firstAffiliation.trim()
+  )}</p>`;
+}
+
+function renderRecommendationScore(paper: RenderablePaper): string {
+  return `<table role="presentation" cellpadding="0" cellspacing="0" border="0" style="margin-top: 14px;">
+                    <tr>
+                      <td bgcolor="#007aff" style="background: #007aff; border-radius: 999px; padding: 8px 13px; color: #ffffff; font-size: 13px; font-weight: 700; line-height: 1.2;">Recommendation score: ${(
+                        paper.score * 100
+                      ).toFixed(1)}%</td>
+                    </tr>
+                  </table>`;
+}
+
+function renderBrief(brief: PaperBrief | undefined, paper: RenderablePaper): string {
+  if (brief) {
+    return `<p style="margin: 18px 0 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong class="text-primary" style="color: #1d1d1f;">TLDR:</strong> <span class="text-primary" style="color: #1d1d1f;">${escapeHtml(
+      ensureSentenceEnding(brief.takeaway)
+    )}</span> <span class="text-tertiary" style="color: #6e6e73;">${escapeHtml(
+      ensureSentenceEnding(brief.tldr)
+    )}</span></p>`;
+  }
+
+  const abstract = paper.abstract.trim()
+    ? truncateText(paper.abstract, ABSTRACT_EXCERPT_LIMIT)
+    : "No abstract provided.";
+  return `<p class="text-secondary" style="margin: 18px 0 0 0; color: #424245; font-size: 14px; line-height: 1.6;"><strong class="text-primary" style="color: #1d1d1f;">Abstract:</strong> ${escapeHtml(
+    ensureSentenceEnding(abstract)
+  )}</p>`;
+}
+
+function renderPaper(paper: RenderablePaper, brief?: PaperBrief): string {
+  return `<tr>
+            <td style="padding: 0 0 18px 0;">
+              <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" class="paper-card border-color" style="width: 100%; table-layout: fixed; background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; border-collapse: separate;">
+                <tr>
+                  <td class="paper-pad" style="padding: 24px; overflow-wrap: anywhere; word-break: break-word;">
+                    ${renderMetaLine(paper)}
+                    <h2 style="margin: 0 0 12px 0; font-size: 24px; line-height: 1.24; font-weight: 700; letter-spacing: 0; overflow-wrap: anywhere; word-break: break-word;">
+                      <a class="text-primary" href="${escapeHtml(paper.url)}" style="color: #1d1d1f; text-decoration: none;">${escapeHtml(
+                        paper.title
+                      )}</a>
+                    </h2>
+                    ${renderAuthors(paper)}
+                    ${renderAffiliation(paper)}
+                    ${renderRecommendationScore(paper)}
+                    ${renderBrief(brief, paper)}
+                  </td>
+                </tr>
+              </table>
+            </td>
+          </tr>`;
 }
 
 export function renderEmail(
-  papers: RecommendedPaper[],
-  romance?: DailyRomance | null
-): string;
-export function renderEmail(papers: RenderablePaper[], romance?: DailyRomance | null): string;
-export function renderEmail(
   papers: RenderablePaper[],
-  romance?: DailyRomance | null
+  romance: DailyRomance | null = null,
+  digest: EditorialDigest | null = null,
+  now = new Date()
 ): string {
   const sortedPapers = [...papers].sort((left, right) => right.score - left.score);
+  const briefByUrl = new Map(
+    papers.map((paper, index) => [paper.url, digest?.papers[index]] as const)
+  );
+  const preheader = digest?.preheader || fallbackPreheader(sortedPapers);
   const content =
     sortedPapers.length === 0
-      ? `<tr><td style="background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; padding: 24px; color: #424245; font-size: 15px; line-height: 1.6; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif;">No recommended papers today.</td></tr>`
-      : sortedPapers.map(renderPaper).join("\n");
+      ? `<tr><td class="paper-card text-secondary border-color" style="background: #ffffff; border: 1px solid #d9ebff; border-radius: 18px; padding: 24px; color: #424245; font-size: 15px; line-height: 1.6;">No recommended papers today.</td></tr>`
+      : sortedPapers.map((paper) => renderPaper(paper, briefByUrl.get(paper.url))).join("\n");
 
   return `<!doctype html>
 <html lang="en">
@@ -156,25 +213,75 @@ export function renderEmail(
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="x-apple-disable-message-reformatting">
     <meta name="format-detection" content="telephone=no,address=no,email=no,date=no,url=no">
-    <title>Daily paper feeds</title>
+    <meta name="color-scheme" content="light dark">
+    <meta name="supported-color-schemes" content="light dark">
+    <title>Daily Paper Feeds</title>
+    <style>
+      :root { color-scheme: light dark; supported-color-schemes: light dark; }
+      @media only screen and (max-width: 680px) {
+        .page-pad { padding: 24px 10px !important; }
+        .email-shell { width: 100% !important; max-width: 100% !important; table-layout: fixed !important; }
+        .header-pad { padding: 8px 8px 22px 8px !important; }
+        .closing-pad { padding-left: 19px !important; padding-right: 19px !important; }
+        .editorial-copy { padding-left: 10px !important; padding-right: 10px !important; }
+        .paper-pad { padding-left: 18px !important; padding-right: 18px !important; }
+      }
+      @media only screen and (max-width: 480px) {
+        .footer-credit,
+        .footer-action {
+          display: block !important;
+          width: 100% !important;
+          text-align: left !important;
+        }
+        .footer-action { padding: 6px 0 0 0 !important; }
+      }
+      @media (prefers-color-scheme: dark) {
+        .email-body, .page { background: #000000 !important; }
+        .paper-card { background: #1c1c1e !important; }
+        .border-color, .paper-card { border-color: #30363d !important; }
+        .text-primary { color: #c9d1d9 !important; }
+        .text-secondary { color: #8b949e !important; }
+        .text-tertiary { color: #7d8590 !important; }
+        .accent { color: #0a84ff !important; }
+      }
+      [data-ogsc] .email-body, [data-ogsc] .page { background: #000000 !important; }
+      [data-ogsc] .paper-card { background: #1c1c1e !important; }
+      [data-ogsc] .border-color, [data-ogsc] .paper-card { border-color: #30363d !important; }
+      [data-ogsc] .text-primary { color: #c9d1d9 !important; }
+      [data-ogsc] .text-secondary { color: #8b949e !important; }
+      [data-ogsc] .text-tertiary { color: #7d8590 !important; }
+      [data-ogsc] .accent { color: #0a84ff !important; }
+    </style>
   </head>
-  <body bgcolor="#e8f4ff" style="margin: 0; padding: 0; background: #e8f4ff;">
-    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; mso-hide: all;">${EMAIL_PREHEADER}</div>
-    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8f4ff" style="width: 100%; background: #e8f4ff; border-collapse: collapse;">
+  <body class="email-body" bgcolor="#e8f4ff" style="margin: 0; padding: 0; background: #e8f4ff;">
+    <div style="display: none; max-height: 0; overflow: hidden; opacity: 0; color: transparent; mso-hide: all;">${escapeHtml(
+      preheader
+    )}</div>
+    <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" bgcolor="#e8f4ff" class="page" style="width: 100%; background: #e8f4ff; border-collapse: collapse;">
       <tr>
-        <td align="center" style="padding: 34px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
-          <table role="presentation" width="${EMAIL_WIDTH}" cellpadding="0" cellspacing="0" border="0" align="center" style="width: 100%; max-width: ${EMAIL_WIDTH}px; border-collapse: collapse;">
+        <td align="center" class="page-pad" style="padding: 34px 16px; font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif; color: #1d1d1f;">
+          <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" align="center" class="email-shell" style="width: 100%; max-width: ${EMAIL_WIDTH}px; table-layout: fixed; border-collapse: collapse;">
             <tr>
-              <td align="center" style="padding: 10px 2px 26px 2px; text-align: center;">
-                <h1 style="font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'Helvetica Neue', Arial, sans-serif; font-size: 36px; line-height: 1.12; margin: 0; color: #007aff; letter-spacing: 0;">Daily paper feeds</h1>
-                ${renderDailyRomance(romance)}
+              <td class="header-pad" style="padding: 10px 4px 26px 4px;">
+                ${renderBrand(now)}
+                ${digest ? renderEditorial(digest) : ""}
               </td>
             </tr>
             ${content}
             <tr>
-              <td align="center" style="padding: 18px 2px 4px 2px; text-align: center; color: #6e6e73; font-size: 13px; line-height: 1.6;">
-                <p style="margin: 0;">Built with <a href="${packageMetadata.homepage}" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a> by <a href="https://nehsgnail.github.io/" style="color: #007aff; font-weight: 700; text-decoration: none;">nehSgnaiL</a>.</p>
-                <p style="margin: 8px 0 0 0;"><a href="${packageMetadata.homepage}#customization" style="color: inherit; font-size: 11px; text-decoration: underline;">Unsubscribe</a></p>
+              <td align="left" style="padding: ${romance ? "10px" : "18px"} 25px 4px 25px; text-align: left; color: #86868b; font-size: 12px; line-height: 1.6;" class="closing-pad text-tertiary">
+                ${romance ? renderRomance(romance) : ""}
+                <table role="presentation" width="40" cellpadding="0" cellspacing="0" border="0" style="width: 40px; margin-top: ${romance ? "24px" : "0"};">
+                  <tr>
+                    <td height="1" bgcolor="#bddcf5" style="height: 1px; background: #bddcf5; font-size: 0; line-height: 0;">&nbsp;</td>
+                  </tr>
+                </table>
+                <table role="presentation" width="100%" cellpadding="0" cellspacing="0" border="0" style="width: 100%; margin-top: 15px;">
+                  <tr>
+                    <td align="left" valign="middle" class="footer-credit" style="padding: 0; color: #86868b; font-size: 11px; line-height: 1.5; text-align: left;">Built with <a href="${packageMetadata.homepage}" class="accent" style="color: #007aff; font-weight: 700; text-decoration: none;">paper-daily-feed</a> by <a href="https://nehsgnail.github.io/" class="accent" style="color: #007aff; font-weight: 700; text-decoration: none;">nehSgnaiL</a>.</td>
+                    <td align="right" valign="middle" class="footer-action" style="padding: 0 0 0 16px; color: #86868b; font-size: 11px; line-height: 1.5; text-align: right; white-space: nowrap;"><a href="${packageMetadata.homepage}#customization" style="color: inherit; text-decoration: underline;">Unsubscribe</a></td>
+                  </tr>
+                </table>
               </td>
             </tr>
           </table>
@@ -187,16 +294,12 @@ export function renderEmail(
 
 function requiredValue(value: string, label: string): string {
   const normalized = value.trim();
-  if (!normalized) {
-    throw new Error(`Missing required delivery value: ${label}.`);
-  }
+  if (!normalized) throw new Error(`Missing required delivery value: ${label}.`);
   return normalized;
 }
 
 function requiredPort(value: number, label: string): number {
-  if (!Number.isFinite(value)) {
-    throw new Error(`Expected delivery value ${label} to be a number.`);
-  }
+  if (!Number.isFinite(value)) throw new Error(`Expected delivery value ${label} to be a number.`);
   return value;
 }
 
@@ -239,10 +342,7 @@ export async function sendEmail(
       connectionTimeout: 15000,
       greetingTimeout: 15000,
       socketTimeout: 30000,
-      auth: {
-        user: emailAddress(sender),
-        pass: senderPassword
-      }
+      auth: { user: emailAddress(sender), pass: senderPassword }
     });
 
     try {
@@ -250,14 +350,19 @@ export async function sendEmail(
         from: formatSender(sender),
         to: receiver,
         subject,
-        html
+        html,
+        attachments: [
+          {
+            filename: "paper-daily-feed-icon.png",
+            path: fileURLToPath(new URL("../docs/paper-daily-feed-icon.png", import.meta.url)),
+            cid: EMAIL_ICON_CID,
+            contentDisposition: "inline"
+          }
+        ]
       });
     } catch (error) {
       const retryDelay = SMTP_RETRY_DELAYS_MS[attempt];
-      if (!isSmtpConnectionError(error) || retryDelay === undefined) {
-        throw error;
-      }
-
+      if (!isSmtpConnectionError(error) || retryDelay === undefined) throw error;
       console.warn(
         `SMTP connection attempt ${attempt + 1}/${SMTP_RETRY_DELAYS_MS.length + 1} failed; retrying in ${retryDelay}ms.`
       );
