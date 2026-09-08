@@ -4696,6 +4696,26 @@
     {
       "fingerprint": "c04c9d3fd20c575b8506a000e774962a9b8a1366255aa459dae2e6a11e6d496c",
       "deliveredAt": "2026-09-06T23:52:52.931Z"
+    },
+    {
+      "fingerprint": "19b428316f19320cb67e2b988e2b2ed3d31292ead4e5c523bd3a116dcd2c9c7b",
+      "deliveredAt": "2026-09-08T00:22:40.684Z"
+    },
+    {
+      "fingerprint": "41605a247c05cbccf73d7996334dcaafe8f3c4a77bacfae8e440c813be29bd19",
+      "deliveredAt": "2026-09-08T00:22:40.684Z"
+    },
+    {
+      "fingerprint": "845bb3cdcd41e9edd00a6c6f2eb3d27e62c4cd2e5ab5bdd7f1414f6611b90902",
+      "deliveredAt": "2026-09-08T00:22:40.684Z"
+    },
+    {
+      "fingerprint": "2e44a45d76284414a96d57436406e5a35a6f88937a49e7a02a6205d9188c2639",
+      "deliveredAt": "2026-09-08T00:22:40.684Z"
+    },
+    {
+      "fingerprint": "39df3e463f728ce77f413ceb9046a179312f551553e563b4fb8e6c79151bfec7",
+      "deliveredAt": "2026-09-08T00:22:40.684Z"
     }
   ]
 }
