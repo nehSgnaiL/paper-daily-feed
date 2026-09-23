@@ -33,5 +33,4 @@ jobs:
         run: bun test
 
       - name: Audit dependencies
-        # adm-zip has no patched release yet; remove this exception once 0.6.1 is published.
-        run: bun audit --ignore GHSA-vwc7-r8mq-g2x9
+        run: bun audit
