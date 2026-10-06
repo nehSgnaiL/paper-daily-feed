@@ -29,7 +29,7 @@ concurrency:
 jobs:
   build:
     if: github.repository == 'nehSgnaiL/paper-daily-feed'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -61,7 +61,7 @@ jobs:
     environment:
       name: github-pages
       url: ${{ steps.deployment.outputs.page_url }}
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     needs: build
     timeout-minutes: 10
     steps:

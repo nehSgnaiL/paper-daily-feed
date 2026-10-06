@@ -24,7 +24,7 @@ env:
 
 jobs:
   keepalive:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout
@@ -53,7 +53,7 @@ jobs:
   sync:
     if: ${{ github.repository != 'nehSgnaiL/paper-daily-feed' || inputs.send_test_notification }}
     needs: keepalive
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-26.04
     timeout-minutes: 10
     steps:
       - name: Checkout
