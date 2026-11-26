@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@huggingface/transformers": "^4.2.0",
-    "nodemailer": "^10.0.2",
+    "nodemailer": "^10.6.1",
     "rss-parser": "^3.13.0"
   },
   "devDependencies": {
